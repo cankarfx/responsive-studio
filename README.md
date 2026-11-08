@@ -392,3 +392,9 @@ src/
     ├── capture.ts                ekran görüntüsü motoru (dilimle-birleştir, ZIP)
     └── record.ts                 WebM ekran kaydı
 ```
+
+## Lisans
+
+[MIT](./LICENSE) © 2026 İnternet Mühendisi. Kodu değiştirebilir, kullanabilir ve
+dağıtabilirsiniz; tek şart telif ve lisans metninin korunması. Paketteki üçüncü taraf
+kütüphanelerin lisansları `licenses/` klasöründedir (Preact: MIT, axe-core: MPL-2.0).

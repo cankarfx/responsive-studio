@@ -3,6 +3,7 @@
   "version": "1.0.1",
   "description": "Profesyonel çoklu-viewport responsive test stüdyosu (Chrome MV3)",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "node scripts/build-ext.mjs && vite build",

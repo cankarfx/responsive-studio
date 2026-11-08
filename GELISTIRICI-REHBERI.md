@@ -441,5 +441,6 @@ gh release create vX.Y.Z release/responsive-studio-vX.Y.Z.zip --title "vX.Y.Z" -
 - `scripts/paketle.mjs` sürümler uyuşmazsa durur; ZIP'in içinde tek bir `responsive-studio/`
   klasörü olur (kullanıcı doğrudan onu seçer).
 - `scripts/build-ext.mjs` üçüncü taraf lisanslarını (`axe-core`, `preact`) `dist/licenses/`'a kopyalar.
+- Projenin kendi lisansı MIT (`LICENSE`, telif: İnternet Mühendisi); build onu `dist/LICENSE.txt` olarak pakete koyar.
 - `release/`, `dist/`, `test/.profil/` git'e girmez (`.gitignore`).
 - Repoda özel güvenlik bildirimi açık (Security → Report a vulnerability).

@@ -36,6 +36,7 @@ function copyStatic() {
   cpSync(resolve(ROOT, 'node_modules/axe-core/LICENSE'), resolve(OUT, 'licenses/axe-core-LICENSE.txt'))
   cpSync(resolve(ROOT, 'node_modules/axe-core/LICENSE-3RD-PARTY.txt'), resolve(OUT, 'licenses/axe-core-LICENSE-3RD-PARTY.txt'))
   cpSync(resolve(ROOT, 'node_modules/preact/LICENSE'), resolve(OUT, 'licenses/preact-LICENSE.txt'))
+  cpSync(resolve(ROOT, 'LICENSE'), resolve(OUT, 'LICENSE.txt'))
 }
 
 if (process.argv.includes('--clean')) rmSync(OUT, { recursive: true, force: true })
