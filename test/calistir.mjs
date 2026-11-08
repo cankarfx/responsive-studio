@@ -36,6 +36,7 @@ const PAKETLER = [
   'ui',          // menü kırpılması, ipucu, ikon butonlar, taşma
   'kayit',       // WebM ekran kaydı (ek Chrome bayrağı ister)
   'guvenlik',    // viewer sitelere kapalı, SW komut doğrulaması, sahte mesaj eleme
+  'kullanici',   // her düğme gerçek fare/klavyeyle: senkron, tek-ekran, menüler, yan panel, kısayollar
 ]
 
 const bekle = (ms) => new Promise((r) => setTimeout(r, ms))

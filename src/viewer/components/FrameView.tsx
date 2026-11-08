@@ -42,8 +42,11 @@ export function FrameView({ frame, device, scale, index }: Props) {
   /* Yeniden yükleme anahtarı: bu değerler değiştiğinde iframe SIFIRDAN kurulur.
      (Yalnızca fragment değişirse tarayıcı aynı-belge gezinmesi yapar ve sayfa
      yeniden yüklenmez — bu yüzden elemanı tamamen değiştiriyoruz.) */
+  /* colorScheme anahtarda YOK: koyu/açık mod canlı uygulanıyor (stylesheet
+     yeniden yazımı + matchMedia yaması, `media` mesajı). Anahtara girince her
+     geçişte tüm ekranlar baştan yükleniyor, form ve kaydırma kayboluyordu. */
   const key = [app.url, app.reloadKey, frame.deviceId, frame.browser, frame.dpr,
-    frame.colorScheme, app.chromeOpts.scrollbars, app.settings.frameBusting,
+    app.chromeOpts.scrollbars, app.settings.frameBusting,
     app.settings.touchMode].join('|')
 
   /* Yüklenemeyen ekran: 'ready' hiç gelmezse kullanıcıya nedenini söyle

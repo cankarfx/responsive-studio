@@ -9,6 +9,9 @@
  *   • bırakınca ivme (momentum) ile kayış sürer
  *   • kısa dokunuşlar tıklama olarak geçer; sürüklemeden sonraki tıklama
  *     yutulur (telefonda kaydırırken bağlantıya basılmış sayılmaz)
+ *   • görsel ve bağlantılar tarayıcının yerel sürükle-bırak'ını başlatmaz —
+ *     yoksa Chrome `pointercancel` gönderip kaydırmayı keser ve nesne imlece
+ *     yapışır. Sitenin kendi `draggable="true"` öğelerine dokunulmaz.
  */
 
 const TIKLAMA_ESIGI = 8       // px — bunun altındaki hareket dokunuş sayılır
@@ -69,6 +72,26 @@ function secimStili(kapat: boolean) {
   st.id = id
   st.textContent = 'html, html * { user-select: none !important; -webkit-user-select: none !important }'
   document.documentElement.appendChild(st)
+}
+
+/** Görsel/bağlantıların yerel sürüklenmesini kapatır (CSS katmanı). */
+function surukleStili(kapat: boolean) {
+  const id = '__rs_nodrag__'
+  document.getElementById(id)?.remove()
+  if (!kapat) return
+  const st = document.createElement('style')
+  st.id = id
+  st.textContent = 'img:not([draggable="true"]), a:not([draggable="true"]), area, svg image'
+    + ' { -webkit-user-drag: none !important }'
+  ;(document.head ?? document.documentElement).appendChild(st)
+}
+
+/** Yerel sürükleme yine başlarsa (CSS'i ezen site) iptal et (olay katmanı). */
+function onDragStart(e: DragEvent) {
+  if (!etkin || !e.isTrusted) return
+  const t = e.target as Element | null
+  if (t instanceof Element && t.closest('[draggable="true"]')) return
+  e.preventDefault()
 }
 
 function onDown(e: PointerEvent) {
@@ -147,6 +170,9 @@ function onClick(e: MouseEvent) {
 export function installTouchScroll() {
   if (kurulu) return
   kurulu = true
+  if (document.documentElement) surukleStili(true)
+  else document.addEventListener('DOMContentLoaded', () => { if (kurulu) surukleStili(true) }, { once: true })
+  window.addEventListener('dragstart', onDragStart, true)
   window.addEventListener('pointerdown', onDown, true)
   window.addEventListener('pointermove', onMove, true)
   window.addEventListener('pointerup', onUp, true)
@@ -161,6 +187,8 @@ export function removeTouchScroll() {
   durum = null
   tiklamaYut = false
   secimStili(false)
+  surukleStili(false)
+  window.removeEventListener('dragstart', onDragStart, true)
   window.removeEventListener('pointerdown', onDown, true)
   window.removeEventListener('pointermove', onMove, true)
   window.removeEventListener('pointerup', onUp, true)

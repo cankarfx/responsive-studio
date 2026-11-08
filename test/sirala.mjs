@@ -9,7 +9,10 @@ for (const t of await (await fetch('http://127.0.0.1:9222/json/list')).json())
 let tab = await (await fetch(`http://127.0.0.1:9222/json/new?${encodeURIComponent(`chrome-extension://${EXT}/viewer.html`)}`,{method:'PUT'})).json()
 let p = new Session(tab.webSocketDebuggerUrl); await p.connect(); await p.send('Runtime.enable')
 for (let i=0;i<40;i++){ if(await p.eval(`typeof chrome!=='undefined' && !!chrome.storage`).catch(()=>false)) break; await sleep(250) }
-await p.eval(`chrome.storage.local.clear()`); p.close()
+await p.eval(`chrome.storage.local.clear()`)
+/* Sekme açılışta son adresi kaydetmeye başlar; o kayıt bitmeden kapatılırsa
+   kapanışta eski durumu geri yazar. Bekle, tekrar temizle, sonra kapat. */
+await sleep(2500); await p.eval(`chrome.storage.local.clear()`); p.close()
 await fetch(`http://127.0.0.1:9222/json/close/${tab.id}`)
 tab = await (await fetch(`http://127.0.0.1:9222/json/new?${encodeURIComponent(`chrome-extension://${EXT}/viewer.html?url=${encodeURIComponent('http://localhost:8899/')}`)}`,{method:'PUT'})).json()
 await sleep(1200); await karelerHazirTab(tab); await sleep(1500)

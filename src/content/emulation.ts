@@ -158,7 +158,9 @@ function listenMediaOverrides(token: string) {
  */
 function patchMatchMedia(c: FramePayload) {
   const original = window.matchMedia.bind(window)
-  const coarse = c.touch
+  /* Parmak modu kapalıyken mobil ekran fareli davranır — CSS tarafı (media.ts)
+     ile aynı cevabı vermeli, yoksa site JS'te dokunmatik, CSS'te fareli sanır. */
+  const coarse = c.touchMode ?? c.touch
 
   function override(query: string): boolean | null {
     const q = query.toLowerCase()

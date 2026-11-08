@@ -33,7 +33,7 @@ npm install
 npm run build          # dist/ üretir — Chrome'a YÜKLENEN klasör burasıdır
 npm run dev            # esbuild + vite izleme modu
 npm run typecheck      # tsc --noEmit
-npm test               # gerçek Chrome'da 16 test paketi (§9)
+npm test               # gerçek Chrome'da 17 test paketi (§9)
 ```
 
 Chrome'a yükleme: `chrome://extensions` → Geliştirici modu → **Paketlenmemiş öğe yükle** →
@@ -271,6 +271,7 @@ için çoğu tarama **ilk hazır çerçevede** çalışır (`scan`), ekrana gör
 | `console.error`'ı eklenti kodundan sarmalamak | Sitenin hataları eklentiye atfedilir | Sayfa bağlamına enjekte et (`pageBridgeSource`) |
 | Araç çubuğu menüsünü `position: absolute` yapmak | `.subbar` overflow'una kırpılır | `position: fixed`, koordinat JS'ten |
 | Parmak modunda `mouse*` dinlemek | Bastırma yüzünden araçlar susar | `pointer*` kullan |
+| Sürükleyerek kaydırmada yerel sürüklemeyi unutmak | Görsel/bağlantı üzerinden sürükleyince Chrome `pointercancel` gönderir, sayfa kaymaz, nesne imlece yapışır | `touch.ts`: `-webkit-user-drag: none` + `dragstart` iptali (`draggable="true"` hariç) |
 | `chrome.permissions.request`'i SW'den çağırmak | Kullanıcı hareketi yok, başarısız | Viewer sayfasından, `await` ÖNCESİNDE |
 | `chrome.debugger`'ı isteğe bağlı izin sanmak | Chrome vermiyor | Pro Mod iptal edildi (YOL-HARITASI §2.4.1) |
 | Tüm ekranları aynı anda yüklemek | Sunucuda `429` | Kademeli yükleme (`loadStagger`) |
@@ -280,6 +281,12 @@ için çoğu tarama **ilk hazır çerçevede** çalışır (`scan`), ekrana gör
 | Özel başlık kuralını alan adı sınırsız kurmak | `Authorization` üçüncü taraf CDN'lere gider | `requestDomains: [host]` |
 | `postMessage(..., '*')` ile üst pencereye yazmak | İç içe gömülü çerçeveler dinler | Hedef = `location.ancestorOrigins[0]` |
 | `pagehide`'da koşulsuz kaydetmek | Testin `storage.clear`'ından sonra eski durum geri yazılır | `dirty` bayrağı — yalnızca değişiklik varsa |
+| Tek-ekran modunda kaynak ekranı yine yayınlamak | "Yalnızca bu ekranda çalış" seçilen ekran diğerlerini sürüklemeye devam eder | `bus.ts` → `shouldMirror`: `soloFid` varken hiç yansıtma; gezinme de yalnızca o ekran |
+| Canlı uygulanabilen bir ayarı iframe anahtarına (`key`) koymak | Her geçişte tüm ekranlar baştan yüklenir, form ve kaydırma kaybolur | `FrameView.tsx` anahtarında yalnızca gerçekten yeniden yükleme gerektirenler (colorScheme yok) |
+| `makeFrame`'de yalnızca `DEVICE_MAP`'e bakmak | Özel cihaz yerine katalogdaki ilk cihaz eklenir | `makeFrame(id, over, settings)` — özel cihazlar ayarlarda |
+| JS `matchMedia` ile CSS'in farklı cevap vermesi | Parmak modu kapalıyken site JS'te dokunmatik, CSS'te fareli sanır | `emulation.ts`: `coarse = touchMode ?? touch` |
+| Preact'te `autoFocus`'a güvenmek | Pencere açılınca odak düğmede kalır, yazılanlar kaybolur | `useRef` + `useEffect(() => ref.current?.focus())` |
+| Çerçevede odak varken viewer kısayolu beklemek | Esc vb. stüdyoya ulaşmaz | Köprü tuşları gönderir; `bus.ts` `key` mesajında Esc'yi işler |
 | `pkill -f "test/.profil"` | Kendi kabuğunu öldürür (exit 144) | `pkill -f "test/[s]erve.mjs"` deseni |
 
 **`sandbox` uyarısı normaldir.** `allow-scripts` + `allow-same-origin` birlikte kullanıldığında
@@ -319,7 +326,7 @@ Testler **gerçek Chrome'da**, Chrome DevTools Protocol üzerinden çalışır �
 iframe'ler, gerçek cross-origin yükleme, gerçek fare olayları.
 
 ```bash
-npm test                     # 16 paketin tamamı
+npm test                     # 17 paketin tamamı
 node test/calistir.mjs faz3  # yalnızca seçilenler
 npm run test:kur             # Chrome + sunucuları açık bırak (elle inceleme)
 ```
@@ -336,6 +343,7 @@ npm run test:kur             # Chrome + sunucuları açık bırak (elle inceleme
 | `sirala` | Ekranları başlıktan sürükleyerek yeniden sıralama |
 | `ui` | Menü kırpılması, ipucu, araç çubuğu taşması |
 | `kayit` | WebM ekran kaydı |
+| `kullanici` | **Her düğme gerçek fare/klavye olayıyla** — senkron (kaydırma/tıklama/giriş/hover/gezinme), tek-ekran modu, üst çubuk, ekran başlığı, bindirmeler, tüm menü maddeleri, yan panel (arama, ölçü ekleme, setler, özel cihaz, çalışma alanı, ayarlar, dışa/içe aktarma), kısayollar, boyutlandırma, Temizle. Ayrıca hiçbir ayarın ekranları beklenmedik şekilde yeniden yüklemediğini doğrular |
 | `guvenlik` | A: WAR kapalı · B: SW komut yetkisi · C: sahte mesaj/pano/iç içe çerçeve · D: kural temizliği · E: normal sekmeden sızdırma girişimi (8897'de kötü sunucu) · F: başlık kapsamı · G: başlıklar yeni oturumda · H: yüklenemeyen ekran uyarısı · I: tek ekran gezinmesinde emülasyon |
 
 ### Altyapı

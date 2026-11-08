@@ -1,6 +1,6 @@
 {
   "name": "responsive-studio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Profesyonel çoklu-viewport responsive test stüdyosu (Chrome MV3)",
   "private": true,
   "type": "module",

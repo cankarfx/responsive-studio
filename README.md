@@ -22,7 +22,9 @@ Web tasarımcıları ve geliştiriciler için çoklu ekran test stüdyosu.
 Eklenti Chrome Web Mağazası'nda değil; GitHub'dan indirip Chrome'a kendiniz yüklersiniz.
 Programlama bilgisi gerekmez.
 
-1. **[Son sürüm sayfasından](https://github.com/cankarfx/responsive-studio/releases/latest)** `responsive-studio-vX.Y.Z.zip` dosyasını indirin
+1. **[Son sürüm sayfasından](https://github.com/cankarfx/responsive-studio/releases/latest)** `responsive-studio-vX.Y.Z.zip` dosyasını indirin.
+   ⚠️ Yeşil **Code → Download ZIP** düğmesi ve Assets'teki **Source code** bağlantıları kaynak
+   kodu indirir; onlar Chrome'a yüklenemez. Adı `responsive-studio-v` ile başlayan dosyayı alın
 2. ZIP'i açın ve çıkan **`responsive-studio`** klasörünü kalıcı bir yere taşıyın
    (ör. `Belgeler`). ⚠️ Bu klasörü sonradan silerseniz ya da taşırsanız eklenti çalışmaz
 3. Chrome'da adres çubuğuna **`chrome://extensions`** yazın
@@ -364,7 +366,7 @@ Bir güvenlik sorunu fark ederseniz lütfen herkese açık bir issue yerine GitH
 ```bash
 npm run dev        # izleme modu
 npm run typecheck  # tip kontrolü
-npm test           # gerçek Chrome'da 16 test paketi (macOS'ta Chrome gerekir)
+npm test           # gerçek Chrome'da 17 test paketi (macOS'ta Chrome gerekir)
 ```
 
 Eklentiyi değiştirecekseniz **[GELISTIRICI-REHBERI.md](./GELISTIRICI-REHBERI.md)** ile başlayın:

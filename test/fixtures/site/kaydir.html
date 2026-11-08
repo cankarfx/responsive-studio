@@ -11,13 +11,18 @@
 <div id="durum">tıklama: yok</div>
 <div style="height:34px"></div>
 <a href="#" id="lnk">BAĞLANTI — kaydırırken açılmamalı</a>
+<img id="resim" src="buyuk.png" alt="test görseli" style="display:block;width:100%;height:180px;object-fit:cover">
+<a href="sayfa2.html" id="lnk2"><img src="favicon.svg" alt="" style="width:40px;height:40px;vertical-align:middle"> Görselli bağlantı</a>
 <div class="ic" id="icKaydir">
   <div>iç kaydırma 1</div><div>iç kaydırma 2</div><div>iç kaydırma 3</div>
   <div>iç kaydırma 4</div><div>iç kaydırma 5</div><div>iç kaydırma 6</div>
   <div>iç kaydırma 7</div><div>iç kaydırma 8</div>
 </div>
+<a href="sayfa2.html" id="lnk3">Metin bağlantısı (ortada)</a>
 <script>
  for (let i=1;i<=60;i++){ const d=document.createElement('div'); d.className='satir'; d.textContent='Satır '+i; document.body.appendChild(d) }
  let n=0
+ window.__surukle = 0
+ addEventListener('dragstart', () => { window.__surukle++ }, true)
  document.getElementById('lnk').addEventListener('click', (e)=>{ e.preventDefault(); n++; document.getElementById('durum').textContent='tıklama: '+n })
 </script></body></html>

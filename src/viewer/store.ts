@@ -119,8 +119,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
 }
 
 let seq = 0
-export function makeFrame(deviceId: string, over: Partial<Frame> = {}): Frame {
-  const dev = DEVICE_MAP.get(deviceId) ?? DEVICES[0]
+export function makeFrame(deviceId: string, over: Partial<Frame> = {}, settings?: AppSettings): Frame {
+  /* Özel cihazlar katalogda değil ayarlarda — onlara da bak, yoksa kullanıcının
+     tanımladığı cihaz yerine listenin ilk cihazı ekleniyordu. */
+  const dev = DEVICE_MAP.get(deviceId) ?? settings?.customDevices.find((d) => d.id === deviceId) ?? DEVICES[0]
   return {
     fid: `f${Date.now().toString(36)}${(seq++).toString(36)}`,
     deviceId: dev.id,
@@ -377,7 +379,7 @@ export const actions = {
   },
 
   addDevice(deviceId: string) {
-    setState((s) => ({ frames: [...s.frames, makeFrame(deviceId, { browser: s.settings.defaultBrowser })] }))
+    setState((s) => ({ frames: [...s.frames, makeFrame(deviceId, { browser: s.settings.defaultBrowser }, s.settings)] }))
   },
 
   toggleDevice(deviceId: string) {
@@ -452,8 +454,8 @@ export const actions = {
   applySet(deviceIds: string[], replace = true) {
     setState((s) => ({
       frames: replace
-        ? deviceIds.map((id) => makeFrame(id, { browser: s.settings.defaultBrowser }))
-        : [...s.frames, ...deviceIds.map((id) => makeFrame(id, { browser: s.settings.defaultBrowser }))],
+        ? deviceIds.map((id) => makeFrame(id, { browser: s.settings.defaultBrowser }, s.settings))
+        : [...s.frames, ...deviceIds.map((id) => makeFrame(id, { browser: s.settings.defaultBrowser }, s.settings))],
       frameInfo: replace ? {} : s.frameInfo,
     }))
   },

@@ -12,13 +12,14 @@ for (let i = 0; i < 40; i++) {
   if (await p.eval(`typeof chrome !== 'undefined' && !!chrome.storage`).catch(() => false)) break
   await sleep(250)
 }
-await p.eval(`chrome.storage.local.set({ rs_state_v1: {
+const tohum = `chrome.storage.local.set({ rs_state_v1: {
   frames: [{ fid:'m1', deviceId:'iphone-16', width:393, height:852, dpr:3, landscape:false, browser:'safari', zoom:1, hidden:false, colorScheme:'auto' }],
   layout:'grid', zoom:1, gap:24, workspaces:[], panel:null,
   sync:{ scroll:false, scrollMode:'ratio', click:false, input:false, hover:false, navigation:true, soloFid:null },
   settings:{ theme:'dark', proMode:false, httpUserAgent:null, autoReload:0, customDevices:[], deviceSets:[],
     lastWorkspaceId:null, favorites:[], defaultBrowser:'chrome', frameBusting:true, customHeaders:[],
-    injectCss:'', injectJs:'', startupSet:'set-populer', loadStagger:0, touchMode:true } }})`)
+    injectCss:'', injectJs:'', startupSet:'set-populer', loadStagger:0, touchMode:true } }})`
+await p.eval(tohum); await sleep(2500); await p.eval(tohum)  /* sekmenin açılış kaydı bunun üzerine yazmasın */
 p.close(); await fetch(`http://127.0.0.1:9222/json/close/${tab.id}`)
 tab = await (await fetch(`http://127.0.0.1:9222/json/new?${encodeURIComponent(`chrome-extension://${EXT}/viewer.html?url=${encodeURIComponent('http://localhost:8899/kaydir.html')}`)}`,{method:'PUT'})).json()
 await sleep(1200); await karelerHazirTab(tab); await sleep(1500)
@@ -91,5 +92,25 @@ await surukle(lnk.x, lnk.y, -150, 8)
 const t2 = await fEval(`document.getElementById('durum').textContent`)
 console.log('   sonuç:', t2, '| scrollY:', await fEval('Math.round(scrollY)'))
 k('kaydırırken bağlantı açılmadı', t2.includes('yok'), t2)
+console.log('\n── GÖRSEL / BAĞLANTI ÜZERİNDEN SÜRÜKLEME ──')
+/* Görseller ve bağlantılar tarayıcıda yerel olarak sürüklenebilir. Parmak modunda
+   bunların üzerinden sürüklemek nesneyi tutmamalı, sayfayı kaydırmalı. */
+await p.send('Input.setInterceptDrags', { enabled: true })
+let yakalananSurukleme = 0
+b.ws.addEventListener('message', (ev) => { try { if (JSON.parse(ev.data).method === 'Input.dragIntercepted') yakalananSurukleme++ } catch {} })
+p.ws.addEventListener('message', (ev) => { try { if (JSON.parse(ev.data).method === 'Input.dragIntercepted') yakalananSurukleme++ } catch {} })
+for (const [ad, secici] of [['görsel', '#resim'], ['görselli bağlantı', '#lnk2 img'], ['metin bağlantısı', '#lnk3']]) {
+  await fEval(`scrollTo(0,0); window.__surukle = 0`); await sleep(500)
+  const n = await elemanKoordu(secici)
+  await surukle(n.x, n.y, -160, 10)
+  const r = await fEval(`({ y: Math.round(scrollY), drag: window.__surukle, url: location.pathname })`)
+  console.log(`   ${ad}:`, JSON.stringify(r), '| yakalanan yerel sürükleme:', yakalananSurukleme)
+  k(`${ad} üzerinden sürükleme nesneyi tutmadı`, r.drag === 0 && yakalananSurukleme === 0, `dragstart=${r.drag}`)
+  k(`${ad} üzerinden sürükleme sayfayı kaydırdı`, r.y > 100, `${r.y}px`)
+  k(`${ad} sonrası sayfa değişmedi`, r.url.endsWith('kaydir.html'), r.url)
+  yakalananSurukleme = 0
+}
+await p.send('Input.setInterceptDrags', { enabled: false })
+
 b.close(); p.close()
 console.log(`\n${hepsi?'✅ GEÇTİ':'❌ BAŞARISIZ'}`); process.exit(0)

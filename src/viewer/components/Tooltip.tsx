@@ -30,8 +30,11 @@ export function Tooltip() {
         /* İlk karşılaşmada title'ı devral: yerleşik ipucu devre dışı kalsın,
            erişilebilir ad korunsun. */
         el.setAttribute('data-tip', t)
-        if (!el.getAttribute('aria-label') && !el.textContent?.trim()) {
+        /* Metinsiz (ikon) düğmenin erişilebilir adı ipucudur. Düğmenin ipucu
+           sonradan değişirse (ör. "Ekran kaydı" → "Kaydı durdur") ad da güncellensin. */
+        if ((!el.getAttribute('aria-label') || el.hasAttribute('data-tip-aria')) && !el.textContent?.trim()) {
           el.setAttribute('aria-label', t)
+          el.setAttribute('data-tip-aria', '')
         }
         el.removeAttribute('title')
         return t

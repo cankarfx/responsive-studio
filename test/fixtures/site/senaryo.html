@@ -1,0 +1,40 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Senaryo sayfası</title>
+<meta name="description" content="Kullanıcı senaryosu test sayfası">
+<meta property="og:title" content="Senaryo OG">
+<style>
+ :root { --renk-ana: #0a66c2; --bosluk: 12px }
+ body{font:16px/1.5 system-ui;margin:0;padding:12px;background:#fff;color:#111}
+ .blok{padding:16px;border-bottom:1px solid #ddd}
+ #hov{padding:14px;background:#eee}
+ #hov:hover{background:rgb(255, 0, 0)}
+ @media (prefers-color-scheme: dark){ body{background:rgb(0, 0, 0);color:#eee} }
+ @media (max-width: 600px){ .genis{display:none} }
+ @media (min-width: 1000px){ .dar{display:none} }
+ .tasan{width:2000px;height:10px;background:#fc0}
+ a{display:block;padding:10px;background:#eef;margin:6px 0}
+</style></head><body>
+<h1>Senaryo</h1>
+<h3>Atlanan seviye</h3>
+<a id="git" href="/sayfa2.html">Sayfa 2'ye git</a>
+<a id="kirik" href="/yok-boyle.html">Kırık bağlantı</a>
+<button id="btn">Sayaç</button> <span id="say">0</span>
+<input id="ad" type="text" aria-label="Ad">
+<input id="onay" type="checkbox" aria-label="Onay">
+<select id="sec" aria-label="Seçim"><option>bir</option><option>iki</option></select>
+<div id="hov">Hover alanı</div>
+<img src="buyuk.png" alt="" width="40" height="40">
+<img src="yok.png" alt="kırık görsel">
+<p class="genis">Geniş ekran metni</p><p class="dar">Dar ekran metni</p>
+<script>
+ window.__s = { tik: 0, hov: 0 }
+ document.getElementById('btn').addEventListener('click', () => {
+   window.__s.tik++; document.getElementById('say').textContent = String(window.__s.tik)
+ })
+ document.getElementById('hov').addEventListener('mouseenter', () => { window.__s.hov++ })
+ for (let i = 1; i <= 80; i++) { const d = document.createElement('div'); d.className = 'blok'; d.textContent = 'Blok ' + i; document.body.appendChild(d) }
+ console.error('SENARYO-HATA')
+ console.warn('SENARYO-UYARI')
+ try { localStorage.setItem('senaryo-anahtar', 'deger') } catch {}
+</script></body></html>

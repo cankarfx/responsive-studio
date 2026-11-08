@@ -30,10 +30,12 @@ export function broadcast(m: ToFrameMessage, exceptFid?: string) {
   }
 }
 
-/** Etkileşim yansıtması açık mı (solo mod kontrolü dahil) */
-function shouldMirror(sourceFid: string, kind: 'scroll' | 'click' | 'input' | 'hover'): boolean {
+/** Etkileşim yansıtması açık mı. Tek-ekran modu ("yalnızca bu ekranda çalış")
+ *  senkronu TAMAMEN askıya alır — seçilen ekran dahil hiçbir ekran diğerlerini
+ *  sürüklemez. */
+function shouldMirror(_sourceFid: string, kind: 'scroll' | 'click' | 'input' | 'hover'): boolean {
   const { sync } = getState()
-  if (sync.soloFid && sync.soloFid !== sourceFid) return false
+  if (sync.soloFid) return false
   return sync[kind]
 }
 
@@ -105,6 +107,9 @@ window.addEventListener('message', (e: MessageEvent) => {
       break
 
     case 'key':
+      /* Odak sitenin içindeyken Esc stüdyoya ulaşmaz — tek-ekran modundan
+         çıkış çerçeveden gelen tuşla da çalışsın. */
+      if (m.key === 'Escape' && getState().sync.soloFid) { actions.setSync({ soloFid: null }); break }
       if (!shouldMirror(m.fid, 'input')) break
       broadcast(
         { t: 'key', path: m.path, key: m.key, code: m.code, ctrl: m.ctrl, shift: m.shift, alt: m.alt, meta: m.meta },
@@ -140,7 +145,7 @@ window.addEventListener('message', (e: MessageEvent) => {
 
     case 'navigate': {
       const { sync } = getState()
-      if (sync.navigation) { actions.navigate(m.url); break }
+      if (sync.navigation && !sync.soloFid) { actions.navigate(m.url); break }
       /* Yalnızca bu ekran gitsin. `location.href` ile gitmek yapılandırma
          yükünü taşımıyordu: başka siteye geçişte Chrome window.name'i
          sıfırladığı için ekran cihaz emülasyonunu ve senkronu kaybediyordu.

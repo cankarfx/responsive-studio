@@ -1,5 +1,5 @@
 /** Yan panel: Cihazlar • Çalışma alanları • Ayarlar */
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { ConfirmButton } from './ConfirmButton'
 import type { DeviceCategory, DeviceSpec } from '@/lib/types'
 import { BUILTIN_SETS, CATEGORY_LABELS, CATEGORY_ORDER } from '@/devices/catalog'
@@ -57,6 +57,33 @@ function DevicePanel() {
   }, [q, devices])
 
   const favs = devices.filter((d) => app.settings.favorites.includes(d.id))
+
+  /* "500x700" yazıldıysa o ölçüde ekran eklenebilsin (katalogda olmasa da) */
+  const olcu = (() => {
+    const m = /^(\d{2,5})\s*[x×*]\s*(\d{2,5})$/.exec(q.trim())
+    if (!m) return null
+    return { w: Math.min(7680, Math.max(120, +m[1])), h: Math.min(7680, Math.max(160, +m[2])) }
+  })()
+  function olcuEkle() {
+    if (!olcu) return
+    const dokunmatik = olcu.w < 1024
+    const dev: DeviceSpec = {
+      id: `custom-${Date.now().toString(36)}`, name: `${olcu.w}×${olcu.h}`, brand: 'Özel',
+      category: 'custom', width: olcu.w, height: olcu.h, dpr: dokunmatik ? 2 : 1, touch: dokunmatik,
+      os: dokunmatik ? 'android' : 'windows', defaultBrowser: 'chrome', custom: true,
+    }
+    actions.addCustomDevice(dev)
+    actions.addDevice(dev.id)
+    setQ('')
+    actions.toast(`${dev.name} ekranı eklendi`, 'ok')
+  }
+  function onAramaTus(e: KeyboardEvent) {
+    if (e.key === 'Escape') { setQ(''); return }
+    if (e.key !== 'Enter') return
+    if (olcu && !filtered.length) { olcuEkle(); return }
+    const ilk = filtered[0]
+    if (ilk) actions.addDevice(ilk.id)
+  }
   const byCat = useMemo(() => {
     const m = new Map<DeviceCategory, DeviceSpec[]>()
     for (const d of filtered) {
@@ -75,12 +102,20 @@ function DevicePanel() {
         <div class="search">
           <IcSearch />
           <input value={q} placeholder="Cihaz ara veya 390x844 yaz…"
+                 title="Cihaz adı ya da ölçü (ör. 390x844) yazın — Enter ilk sonucu ekler"
+                 onKeyDown={(e) => onAramaTus(e as unknown as KeyboardEvent)}
                  onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
           {q && <button class="btn sm icon" onClick={() => setQ('')}>×</button>}
         </div>
       </div>
 
       <div class="sidebar-body">
+        {olcu && (
+          <button class="btn primary" style={{ margin: '0 10px 10px', width: 'calc(100% - 20px)' }}
+                  title="Bu ölçüde özel bir ekran ekler" onClick={olcuEkle}>
+            {olcu.w}×{olcu.h} ölçüsünde ekran ekle
+          </button>
+        )}
         {!q && (
           <>
             <div class="group-title">Hazır setler</div>
@@ -171,6 +206,9 @@ function CustomDeviceModal({ onClose }: { onClose: () => void }) {
   const [h, setH] = useState('800')
   const [dpr, setDpr] = useState('1')
   const [touch, setTouch] = useState(false)
+  const adRef = useRef<HTMLInputElement>(null)
+  /* autoFocus Preact'te güvenilir değil (pencere sonradan çiziliyor) — elle odakla */
+  useEffect(() => { adRef.current?.focus() }, [])
 
   /* Escape ile kapat */
   useEffect(() => {
@@ -207,7 +245,8 @@ function CustomDeviceModal({ onClose }: { onClose: () => void }) {
         <div class="content">
           <div class="field">
             <label>Ad</label>
-            <input type="text" value={name} placeholder="Örn. Müşteri monitörü" autoFocus
+            <input ref={adRef} type="text" value={name} placeholder="Örn. Müşteri monitörü"
+                   onKeyDown={(e) => { if (e.key === 'Enter') save() }}
                    onInput={(e) => setName((e.target as HTMLInputElement).value)} />
           </div>
           <div class="row">
@@ -396,21 +435,6 @@ function SettingsPanel() {
       <div class="group-title">Gelişmiş</div>
       <Toggle label="Çerçeve kaçışını engelle" hint="sandbox ile sitenin üst pencereyi ele geçirmesini önler. Bir site bozuk çalışıyorsa kapatın."
               on={s.frameBusting} onChange={(v) => actions.setSettings({ frameBusting: v })} />
-
-      <div class="group-title">Renk şeması emülasyonu</div>
-      <div style={{ padding: '0 10px 12px', fontSize: 11.5, color: 'var(--fg-3)', lineHeight: 1.55 }}>
-        Üstteki <b>Renk şeması</b> seçimi şu an <b>yalnızca JavaScript düzeyinde</b> uygulanır:
-        <code>matchMedia('(prefers-color-scheme: dark)')</code> sorgusu emüle edilen değeri döndürür,
-        ancak sitenin CSS'indeki <code>@media (prefers-color-scheme)</code> kuralları işletim
-        sisteminizin temasına göre çalışmaya devam eder.
-        <br /><br />
-        CDP tabanlı bir “Pro Mod” denendi ve kaldırıldı: Chrome, <code>debugger</code> iznini
-        isteğe bağlı olarak vermiyor — yalnızca kalıcı ve kapsamlı bir kurulum izniyle mümkün.
-        Tek bir özellik için bu takas yapılmadı.
-        <br /><br />
-        Gerçek CSS koyu mod emülasyonu <b>Faz 3</b>'te, izin gerektirmeyen bir yolla
-        (sayfanın <code>prefers-color-scheme</code> media kurallarının yeniden yazılması) gelecek.
-      </div>
 
       <div class="group-title">Klavye kısayolları</div>
       <div style={{ padding: '0 10px 20px', fontSize: 11.5, color: 'var(--fg-2)', lineHeight: 2 }}>
