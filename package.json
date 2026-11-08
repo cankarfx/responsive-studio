@@ -1,0 +1,27 @@
+{
+  "name": "responsive-studio",
+  "version": "1.0.0",
+  "description": "Profesyonel çoklu-viewport responsive test stüdyosu (Chrome MV3)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-ext.mjs && vite build",
+    "dev": "node scripts/build-ext.mjs --watch & vite build --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/calistir.mjs",
+    "test:kur": "node test/calistir.mjs --kur",
+    "paket": "rm -rf dist && npm run build && node scripts/paketle.mjs"
+  },
+  "dependencies": {
+    "axe-core": "^4.13.0",
+    "preact": "^10.27.2"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.28",
+    "@types/node": "^26.6.0",
+    "esbuild": "^0.25.10",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7"
+  }
+}

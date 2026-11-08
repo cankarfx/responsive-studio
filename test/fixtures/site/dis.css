@@ -1,0 +1,3 @@
+/* Cross-origin gibi davranacak harici stylesheet */
+@media (prefers-color-scheme: dark) { .dis::after { content: "DIS-KOYU"; } }
+@media (prefers-color-scheme: light) { .dis::after { content: "DIS-ACIK"; } }

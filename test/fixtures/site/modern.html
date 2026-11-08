@@ -1,0 +1,42 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Modern SPA Parmak Testi</title>
+<link rel="stylesheet" href="http://localhost:8898/app.css">
+<style>
+ body{font:15px/1.5 system-ui;margin:0;padding:14px;background:#fff;color:#111}
+ .kutu{padding:8px;border:1px solid #999;margin:6px 0}
+</style></head><body>
+<div class="kutu cdn-durum">CDN: </div>
+<div class="kutu ad-durum">adopted: </div>
+<div class="kutu"><span class="ad-btn">adopted :hover</span></div>
+<my-kart></my-kart>
+<script>
+ // 1) adoptedStyleSheets (CSS-in-JS / Lit tarzi)
+ const s1 = new CSSStyleSheet()
+ s1.replaceSync(`
+   .ad-durum::after { content: "AD-BELIRSIZ" }
+   @media (hover: none) { .ad-durum::after { content: "AD-HOVER-YOK" } }
+   @media (hover: hover) { .ad-durum::after { content: "AD-HOVER-VAR" } }
+   .ad-btn { padding:10px 16px; background:#ddd; border:2px solid #333; display:inline-block }
+   .ad-btn:hover { background:#e11; color:#fff }
+ `)
+ document.adoptedStyleSheets = [s1]
+
+ // 2) Shadow DOM (web bileseni)
+ class MyKart extends HTMLElement {
+   connectedCallback() {
+     const sr = this.attachShadow({ mode: 'open' })
+     const sh = new CSSStyleSheet()
+     sh.replaceSync(`
+       .sd-durum::after { content: "SD-BELIRSIZ" }
+       @media (hover: none) { .sd-durum::after { content: "SD-HOVER-YOK" } }
+       @media (hover: hover) { .sd-durum::after { content: "SD-HOVER-VAR" } }
+       .sd-btn { padding:10px 16px; background:#ddd; border:2px solid #333; display:inline-block }
+       .sd-btn:hover { background:#0a0; color:#fff }
+       .kutu{padding:8px;border:1px dashed #66c;margin:6px 0;font:15px system-ui}
+     `)
+     sr.adoptedStyleSheets = [sh]
+     sr.innerHTML = '<div class="kutu sd-durum">shadow: </div><div class="kutu"><span class="sd-btn">shadow :hover</span></div>'
+   }
+ }
+ customElements.define('my-kart', MyKart)
+</script></body></html>

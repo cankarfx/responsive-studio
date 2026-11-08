@@ -1,0 +1,16 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Frame bust testi</title></head>
+<body style="font:16px system-ui;padding:20px;background:#fee">
+<h1>Frame-busting denemesi</h1>
+<p id="sonuc">bekleniyor…</p>
+<button id="btn" style="padding:12px 20px;font-size:16px">Tıkla — üst pencereyi ele geçirmeyi dene</button>
+<script>
+ const yaz = (t) => { document.getElementById('sonuc').textContent = t; console.log('[bust]', t) };
+ // 1) Kullanici hareketi OLMADAN
+ try { top.location = location.href + '?busted=auto'; yaz('otomatik: engellenmedi (!)') }
+ catch(e) { yaz('otomatik: ENGELLENDI — ' + e.name) }
+ // 2) Kullanici hareketi ILE
+ document.getElementById('btn').onclick = () => {
+   try { top.location.href = location.href + '?busted=click'; yaz('tiklamayla: engellenmedi (!)') }
+   catch(e) { yaz('tiklamayla: ENGELLENDI — ' + e.name) }
+ };
+</script></body></html>

@@ -1,0 +1,82 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Faz 3 Erisilebilirlik Test Sayfasi</title>
+<meta name="description" content="Kontrast, baslik yapisi, alt metin ve sosyal onizleme testleri icin hazirlanmis sayfa">
+<meta name="theme-color" content="#6366f1">
+<meta property="og:title" content="Responsive Studio Test">
+<meta property="og:description" content="Sosyal onizleme kartlarini test etmek icin ornek aciklama metni.">
+<meta property="og:image" content="/kapak.svg">
+<meta property="og:site_name" content="Test Sitesi">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="http://localhost:8899/">
+<link rel="icon" href="/favicon.svg" sizes="any">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/dis.css">
+<style>
+ :root{ --renk-birincil:#6366f1; --renk-ikincil:#34d399; --bosluk-1:8px; --bosluk-2:16px;
+        --yaricap:10px; --font-ana:system-ui; --golge:0 2px 8px rgba(0,0,0,.2) }
+ body{font:16px/1.5 var(--font-ana);margin:0;padding:var(--bosluk-2);background:#fff;color:#111}
+ .zayif{color:#aaa;background:#fff}          /* KONTRAST HATASI ~2.3:1 */
+ .cok-zayif{color:#ddd;background:#fff}      /* KONTRAST HATASI ~1.3:1 */
+ .iyi{color:#333;background:#fff}            /* gecer */
+ .kucuk-btn{width:20px;height:20px;padding:0;font-size:9px}  /* KUCUK HEDEF */
+ /* PARMAK MODU TESTİ */
+ .hover-menu{position:relative;display:inline-block;padding:8px 14px;border:2px solid #333;background:#eee;color:#111}
+ .hover-menu .alt{display:none;position:absolute;top:100%;left:0;background:#333;color:#fff;padding:8px;white-space:nowrap}
+ .hover-menu:hover .alt{display:block}
+ .hover-menu:hover{background:#6366f1;color:#fff}
+ .pmode::after{content:"BELIRSIZ"}
+ @media (pointer: coarse){ .pmode::after{content:"DOKUNMATIK"} }
+ @media (pointer: fine){ .pmode::after{content:"FARE"} }
+ @media (hover: none){ .hmode::after{content:"HOVER-YOK"} }
+ @media (hover: hover){ .hmode::after{content:"HOVER-VAR"} }
+ @media (prefers-color-scheme: dark){ body{background:#111;color:#eee} .tema::after{content:"KOYU"} }
+ @media (prefers-color-scheme: light){ .tema::after{content:"ACIK"} }
+ @media (prefers-reduced-motion: reduce){ .hareket::after{content:"AZALTILMIS"} }
+ @media (prefers-reduced-motion: no-preference){ .hareket::after{content:"NORMAL"} }
+ @media (prefers-contrast: more){ .kontrast::after{content:"YUKSEK"} }
+ .tasma{width:1400px;background:#fee;padding:8px;color:#333}
+ @media (max-width:480px){ .s{color:#700} }
+ @media (max-width:600px){ .mode::after{content:"MOBIL"} }
+ @media (min-width:601px) and (max-width:1023px){ .mode::after{content:"TABLET"} }
+ @media (min-width:768px){ .t{color:#070} }
+ @media (min-width:1024px){ .mode::after{content:"MASAUSTU"} }
+ @media (min-width:1280px){ .x{color:#007} }
+</style></head>
+<body>
+<header><nav aria-label="Ana menu"><a href="/">Ana sayfa</a></nav></header>
+<main>
+  <h1 class="mode">Kip: </h1>
+  <div class="box tema">Tema: </div>
+  <div class="box pmode">Isaretleyici: </div>
+  <div class="box hmode">Hover: </div>
+  <div class="hover-menu" id="hm">Menu (hover ile acilir)<div class="alt">ALT MENU GORUNUR</div></div>
+  <div class="box hareket">Hareket: </div>
+  <div class="box kontrast">Kontrast tercihi: </div>
+  <h2>Ikinci seviye</h2>
+  <h4>Dorduncu seviye — UCUNCU ATLANDI</h4>
+  <p class="zayif">Bu metnin kontrasti cok dusuk (acik gri).</p>
+  <p class="cok-zayif">Bu metin neredeyse okunmuyor.</p>
+  <p class="iyi">Bu metnin kontrasti yeterli.</p>
+  <img src="/favicon.svg" width="40" height="40">
+  <img src="/favicon.svg" width="40" height="40" alt="">
+  <img src="/favicon.svg" width="40" height="40" alt="image.png">
+  <img src="/favicon.svg" width="40" height="40" alt="Anlamli bir alt metin">
+  <p><button class="kucuk-btn">x</button> <button>Normal boyutlu dugme</button></p>
+  <p><input type="text" placeholder="Etiketsiz alan"> <label>Etiketli: <input type="text"></label></p>
+  <p><a href="#a" tabindex="3">Pozitif tabindex 3</a> · <a href="#b">Normal</a></p>
+  <div class="box tasma">BU KUTU 1400px — yatay tasma yaratir</div>
+  <p><a href="/sayfa2.html">Calisan baglanti</a> · <a href="/yok-boyle-sayfa.html">Kirik baglanti</a> ·
+     <a href="https://example.com/">Dis baglanti</a></p>
+  <img src="/yok.png" alt="kirik gorsel" width="80">
+  <img src="/buyuk.png" width="60" alt="Gereginden buyuk raster gorsel">
+</main>
+<footer>Alt bilgi</footer>
+<script>
+ try{ localStorage.setItem('oturum','abc123'); localStorage.setItem('tercih','{"tema":"koyu"}');
+      sessionStorage.setItem('gecici','xyz') }catch(e){}
+ document.cookie='test_cerez=deger123;path=/';
+ console.error('Test hatasi: bilerek uretildi');
+ console.warn('Test uyarisi');
+</script></body></html>

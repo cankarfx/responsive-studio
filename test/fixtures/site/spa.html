@@ -1,0 +1,40 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>SPA Parmak Testi</title>
+<link rel="stylesheet" href="http://localhost:8898/app.css">
+<style>
+ body{font:15px/1.5 system-ui;margin:0;padding:14px;background:#fff;color:#111}
+ .kutu{padding:8px;border:1px solid #999;margin:6px 0}
+ .yerel-btn{padding:10px 16px;background:#ddd;border:2px solid #333;display:inline-block}
+ .yerel-btn:hover{background:#06c;color:#fff}
+</style></head><body>
+<div class="kutu cdn-durum">CDN isaretleyici: </div>
+<div class="kutu cdn-hover">CDN hover: </div>
+<div class="kutu"><span class="yerel-btn">YEREL :hover</span></div>
+<div class="kutu"><span class="cdn-btn">CDN :hover</span></div>
+<div class="kutu"><span class="hover:kirmizi" style="padding:10px 16px;background:#ddd;border:2px solid #333;display:inline-block">TAILWIND tarzi :hover</span></div>
+<div class="kutu"><span id="js" style="padding:10px 16px;background:#ddd;border:2px solid #333;display:inline-block">JS ile hover (onmouseenter)</span></div>
+<div class="kutu" id="olay">Son fare olayi: (yok)</div>
+<script>
+ // SPA gibi: yuklendikten SONRA stil enjekte et
+ setTimeout(() => {
+   const st = document.createElement('style')
+   st.textContent = '.gec-btn{padding:10px 16px;background:#ddd;border:2px solid #333;display:inline-block}'
+     + '.gec-btn:hover{background:#0a0;color:#fff}'
+     + '.gec-durum::after{content:"GEC-BELIRSIZ"}'
+     + '@media (hover: none){ .gec-durum::after{content:"GEC-HOVER-YOK"} }'
+     + '@media (hover: hover){ .gec-durum::after{content:"GEC-HOVER-VAR"} }'
+   document.head.appendChild(st)
+   const d = document.createElement('div')
+   d.className = 'kutu'
+   d.innerHTML = '<span class="gec-btn">GEC ENJEKTE :hover</span> <span class="gec-durum"></span>'
+   document.body.appendChild(d)
+ }, 800)
+ const js = document.getElementById('js')
+ js.addEventListener('mouseenter', () => { js.style.background='#e11'; js.style.color='#fff'
+   document.getElementById('olay').textContent = 'Son fare olayi: mouseenter' })
+ js.addEventListener('mouseleave', () => { js.style.background='#ddd'; js.style.color='#111' })
+ document.addEventListener('mousemove', () => {
+   const o = document.getElementById('olay')
+   if (!o.dataset.mm) { o.dataset.mm = '1'; o.textContent = 'Son fare olayi: mousemove' }
+ }, true)
+</script></body></html>

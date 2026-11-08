@@ -1,0 +1,12 @@
+node_modules/
+dist/
+release/
+
+# test artefaktları
+test/.profil/
+test/indirilen/
+test/loglar/
+test/*.png
+
+*.log
+.DS_Store

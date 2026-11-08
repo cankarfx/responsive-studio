@@ -1,0 +1,23 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Kaydırma testi</title>
+<style>
+ body{font:15px/1.6 system-ui;margin:0;padding:12px;background:#fff;color:#111}
+ .satir{padding:14px;border-bottom:1px solid #ddd}
+ .ic{height:160px;overflow-y:auto;border:2px solid #06c;margin:10px 0}
+ .ic div{padding:12px;border-bottom:1px solid #cde}
+ #durum{position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:6px;z-index:9}
+ a{display:block;padding:10px;background:#eef;margin:6px 0}
+</style></head><body>
+<div id="durum">tıklama: yok</div>
+<div style="height:34px"></div>
+<a href="#" id="lnk">BAĞLANTI — kaydırırken açılmamalı</a>
+<div class="ic" id="icKaydir">
+  <div>iç kaydırma 1</div><div>iç kaydırma 2</div><div>iç kaydırma 3</div>
+  <div>iç kaydırma 4</div><div>iç kaydırma 5</div><div>iç kaydırma 6</div>
+  <div>iç kaydırma 7</div><div>iç kaydırma 8</div>
+</div>
+<script>
+ for (let i=1;i<=60;i++){ const d=document.createElement('div'); d.className='satir'; d.textContent='Satır '+i; document.body.appendChild(d) }
+ let n=0
+ document.getElementById('lnk').addEventListener('click', (e)=>{ e.preventDefault(); n++; document.getElementById('durum').textContent='tıklama: '+n })
+</script></body></html>

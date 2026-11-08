@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "Responsive Studio",
+  "version": "1.0.0",
+  "description": "Açık olan siteyi onlarca cihaz boyutunda aynı anda, canlı ve etkileşimli görüntüleyin. Profesyonel responsive test stüdyosu.",
+  "minimum_chrome_version": "120",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Responsive Studio'da aç (Ctrl+Shift+Y)",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "scripting",
+    "contextMenus",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "optional_permissions": [
+    "cookies"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Geçerli sayfayı Responsive Studio'da aç"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "axe.min.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
