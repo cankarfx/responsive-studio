@@ -37,6 +37,7 @@ const PAKETLER = [
   'kayit',       // WebM ekran kaydı (ek Chrome bayrağı ister)
   'guvenlik',    // viewer sitelere kapalı, SW komut doğrulaması, sahte mesaj eleme
   'kullanici',   // her düğme gerçek fare/klavyeyle: senkron, tek-ekran, menüler, yan panel, kısayollar
+  'sekmeler',    // iki stüdyo sekmesi birbirinin ekran düzenini ezmez
 ]
 
 const bekle = (ms) => new Promise((r) => setTimeout(r, ms))

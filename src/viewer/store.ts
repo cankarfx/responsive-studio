@@ -188,7 +188,10 @@ export function setState(patch: Partial<AppState> | ((s: AppState) => Partial<Ap
   listeners.forEach((l) => l())
   /* Yalnızca kalıcı dilimler değiştiyse kaydet — konsol/ölçüm gibi geçici
      güncellemeler kaydı sürekli ertelemesin. */
-  if (!applyingRemote && PERSISTED_KEYS.some((k) => prev[k] !== state[k])) schedulePersist()
+  if (applyingRemote) return
+  let changed = false
+  for (const k of PERSISTED_KEYS) if (prev[k] !== state[k]) { changedKeys.add(k); changed = true }
+  if (changed) schedulePersist()
 }
 
 function subscribe(fn: () => void) {
@@ -219,6 +222,15 @@ let dirty = false
 let applyingRemote = false
 let lastWritten = ''
 let quotaWarned = false
+/** Son yazmadan beri BU sekmede değişen kalıcı dilimler. Yalnızca bunlar yazılır;
+    böylece iki stüdyo sekmesi açıkken birinin kaydı diğerinin ekran düzenini ezmez
+    (her dilimde son değiştiren kazanır, son kapanan değil). */
+const changedKeys = new Set<(typeof PERSISTED_KEYS)[number]>()
+/** Depodaki kaydın bilinen son hâli — birleştirmeyi pagehide'da da eşzamanlı yapabilmek için */
+let storedCache: Record<string, unknown> | null = null
+/** Sekmeye özel düzen: aynı sekme yenilenince başka sekmenin düzenine değil kendisininkine döner */
+const TAB_KEY = 'rs_tab_state_v1'
+const TAB_KEYS = ['frames', 'layout', 'zoom', 'gap', 'sync', 'chromeOpts', 'panel'] as const
 
 function schedulePersist() {
   dirty = true
@@ -262,7 +274,7 @@ async function persist() {
   persistFirst = 0
   dirty = false
   const s = state
-  const data = {
+  const fresh: Record<string, unknown> = {
     frames: framesForStorage(s.frames, OVERLAY_BUDGET),
     layout: s.layout,
     zoom: s.zoom,
@@ -274,6 +286,15 @@ async function persist() {
     panel: s.panel,
     lastUrl: s.url,
   }
+  try { sessionStorage.setItem(TAB_KEY, JSON.stringify(fresh)) } catch { /* kota / gizli mod */ }
+  /* Depodaki kayıt + yalnızca bu sekmenin değiştirdiği dilimler */
+  const data: Record<string, unknown> = storedCache ? { ...storedCache } : { ...fresh }
+  for (const k of changedKeys) {
+    const field = k === 'url' ? 'lastUrl' : k
+    data[field] = fresh[field]
+  }
+  changedKeys.clear()
+  storedCache = data
   try {
     lastWritten = JSON.stringify(data)
     await chrome.storage.local.set({ [PERSIST_KEY]: data })
@@ -297,6 +318,7 @@ try {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !changes[PERSIST_KEY]) return
     const nv = changes[PERSIST_KEY].newValue as { settings?: AppSettings; workspaces?: Workspace[] } | undefined
+    storedCache = (nv as Record<string, unknown> | undefined) ?? null
     if (!nv || JSON.stringify(nv) === lastWritten) return
     applyingRemote = true
     try {
@@ -311,7 +333,17 @@ try {
 export async function hydrate() {
   try {
     const got = await chrome.storage.local.get(PERSIST_KEY)
-    const saved = got?.[PERSIST_KEY] as Partial<AppState> & { lastUrl?: string } | undefined
+    let saved = got?.[PERSIST_KEY] as Partial<AppState> & { lastUrl?: string } | undefined
+    storedCache = (saved as Record<string, unknown> | undefined) ?? null
+    /* Sekme yenilendiyse kendi düzeni; ayarlar ve çalışma alanları her zaman ortak kayıttan */
+    let own: Partial<AppState> | null = null
+    try { own = JSON.parse(sessionStorage.getItem(TAB_KEY) ?? 'null') } catch { own = null }
+    /* Ortak kayıt silinmişse (sıfırlama) sekme kopyası da diriltilmez */
+    if (saved && own && typeof own === 'object') {
+      const pick: Record<string, unknown> = {}
+      for (const k of TAB_KEYS) if (k in own) pick[k] = own[k]
+      saved = { ...(saved ?? {}), ...pick }
+    }
     if (!saved) return
     state = {
       ...state,

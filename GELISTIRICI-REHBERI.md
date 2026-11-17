@@ -33,7 +33,7 @@ npm install
 npm run build          # dist/ üretir — Chrome'a YÜKLENEN klasör burasıdır
 npm run dev            # esbuild + vite izleme modu
 npm run typecheck      # tsc --noEmit
-npm test               # gerçek Chrome'da 17 test paketi (§9)
+npm test               # gerçek Chrome'da 18 test paketi (§9)
 ```
 
 Chrome'a yükleme: `chrome://extensions` → Geliştirici modu → **Paketlenmemiş öğe yükle** →
@@ -221,6 +221,13 @@ AppState = {
 - `AppSettings`: `theme proMode httpUserAgent autoReload customDevices deviceSets favorites
   defaultBrowser customHeaders injectCss injectJs startupSet loadStagger touchMode frameBusting`
 - Kalıcılık: `chrome.storage.local` anahtarı **`rs_state_v1`**, 400 ms gecikmeli yazım.
+  **Yalnızca bu sekmede değişen dilimler** (`changedKeys`) depodaki kaydın üzerine yazılır;
+  böylece iki stüdyo sekmesi birbirinin ekran düzenini ezmez (her dilimde son değiştiren
+  kazanır). Depodaki kaydın son hâli `storedCache`'te tutulur (`onChanged` ile güncel),
+  birleştirme `pagehide`'da da eşzamanlı yapılabilsin diye.
+- Sekmeye özel kopya: `sessionStorage` anahtarı `rs_tab_state_v1` — sekme yenilenince
+  ekran düzeni (frames, layout, zoom, gap, sync, chromeOpts, panel) ondan gelir; ayarlar ve
+  çalışma alanları her zaman ortak kayıttan. Ortak kayıt silinmişse sekme kopyası kullanılmaz.
   Şema kırılırsa anahtarı `rs_state_v2` yapın ve `hydrate()`'e geçiş kodu ekleyin.
 - `hydrate()` kayıtlı ayarları `DEFAULT_SETTINGS` üzerine yayar; **yeni alan eklerken
   varsayılanı `DEFAULT_SETTINGS`'e koymak yeterli**, eski kayıtlar bozulmaz.
@@ -280,6 +287,7 @@ için çoğu tarama **ilk hazır çerçevede** çalışır (`scan`), ekrana gör
 | SW `fetch`'te çerez göndermek | Site, kullanıcının oturumuyla başka adresleri okur | `credentials: 'omit'` + yerel ağ engeli + içerik türü |
 | Özel başlık kuralını alan adı sınırsız kurmak | `Authorization` üçüncü taraf CDN'lere gider | `requestDomains: [host]` |
 | `postMessage(..., '*')` ile üst pencereye yazmak | İç içe gömülü çerçeveler dinler | Hedef = `location.ancestorOrigins[0]` |
+| Kayıtta tüm durumu tek parça yazmak | Açık ikinci stüdyo sekmesinin herhangi bir değişikliği (adres bile) diğerinin ekran düzenini ezer | Yalnızca değişen dilimleri `storedCache` üzerine birleştir (`test/sekmeler.mjs`) |
 | `pagehide`'da koşulsuz kaydetmek | Testin `storage.clear`'ından sonra eski durum geri yazılır | `dirty` bayrağı — yalnızca değişiklik varsa |
 | Tek-ekran modunda kaynak ekranı yine yayınlamak | "Yalnızca bu ekranda çalış" seçilen ekran diğerlerini sürüklemeye devam eder | `bus.ts` → `shouldMirror`: `soloFid` varken hiç yansıtma; gezinme de yalnızca o ekran |
 | Canlı uygulanabilen bir ayarı iframe anahtarına (`key`) koymak | Her geçişte tüm ekranlar baştan yüklenir, form ve kaydırma kaybolur | `FrameView.tsx` anahtarında yalnızca gerçekten yeniden yükleme gerektirenler (colorScheme yok) |
@@ -326,7 +334,7 @@ Testler **gerçek Chrome'da**, Chrome DevTools Protocol üzerinden çalışır �
 iframe'ler, gerçek cross-origin yükleme, gerçek fare olayları.
 
 ```bash
-npm test                     # 17 paketin tamamı
+npm test                     # 18 paketin tamamı
 node test/calistir.mjs faz3  # yalnızca seçilenler
 npm run test:kur             # Chrome + sunucuları açık bırak (elle inceleme)
 ```
@@ -343,6 +351,7 @@ npm run test:kur             # Chrome + sunucuları açık bırak (elle inceleme
 | `sirala` | Ekranları başlıktan sürükleyerek yeniden sıralama |
 | `ui` | Menü kırpılması, ipucu, araç çubuğu taşması |
 | `kayit` | WebM ekran kaydı |
+| `sekmeler` | İki stüdyo sekmesi: biri diğerinin ekran düzenini ezmez, yenilenen sekme kendi düzenine döner, ayarlar taşınır, depo temizlenince sekme kopyası diriltilmez |
 | `kullanici` | **Her düğme gerçek fare/klavye olayıyla** — senkron (kaydırma/tıklama/giriş/hover/gezinme), tek-ekran modu, üst çubuk, ekran başlığı, bindirmeler, tüm menü maddeleri, yan panel (arama, ölçü ekleme, setler, özel cihaz, çalışma alanı, ayarlar, dışa/içe aktarma), kısayollar, boyutlandırma, Temizle. Ayrıca hiçbir ayarın ekranları beklenmedik şekilde yeniden yüklemediğini doğrular |
 | `guvenlik` | A: WAR kapalı · B: SW komut yetkisi · C: sahte mesaj/pano/iç içe çerçeve · D: kural temizliği · E: normal sekmeden sızdırma girişimi (8897'de kötü sunucu) · F: başlık kapsamı · G: başlıklar yeni oturumda · H: yüklenemeyen ekran uyarısı · I: tek ekran gezinmesinde emülasyon |
 

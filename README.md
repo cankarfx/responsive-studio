@@ -97,6 +97,8 @@ damlalık, kayıt ve konsol ise ikon olarak sağda.
 
 ## Neler var
 
+Tüm özelliklerin kısa açıklamalı tek tablosu: **[OZELLIKLER.md](./OZELLIKLER.md)**
+
 ### Cihazlar ve ekranlar
 
 - **191 cihaz** — iPhone 5'ten iPhone 17 Pro Max'e, Galaxy/Pixel/Xiaomi, iPad'ler,
@@ -366,7 +368,7 @@ Bir güvenlik sorunu fark ederseniz lütfen herkese açık bir issue yerine GitH
 ```bash
 npm run dev        # izleme modu
 npm run typecheck  # tip kontrolü
-npm test           # gerçek Chrome'da 17 test paketi (macOS'ta Chrome gerekir)
+npm test           # gerçek Chrome'da 18 test paketi (macOS'ta Chrome gerekir)
 ```
 
 Eklentiyi değiştirecekseniz **[GELISTIRICI-REHBERI.md](./GELISTIRICI-REHBERI.md)** ile başlayın:

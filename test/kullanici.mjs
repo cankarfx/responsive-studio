@@ -425,6 +425,14 @@ await tikla('Yatay taşmaya sebep olan elemanları işaretle'); await sleep(300)
 await tikla('Elemana tıkla — tüm ekranlarda eşleniği vurgulanır'); await sleep(400)
 await cerTikla('m1', 'h1'); await sleep(800)
 ck = await cekmece()
+if (!(ck && /h1/i.test(ck.metin))) {
+  const c = await cerKoord('m1', 'h1')
+  /* Ara sıra (eski kodda da) görülen dalgalanmanın tanısı — yalnızca başarısızlıkta yazar */
+  console.log('   TANI denetçi düğmesi:', await viewer(`document.querySelector('button.on[title^="Elemana tıkla"], button.on[data-tip^="Elemana tıkla"]') ? 'açık' : 'kapalı'`))
+  console.log('   TANI çekmece:', (ck?.metin ?? '').slice(0, 400))
+  console.log('   TANI nokta:', JSON.stringify(c), await viewer(`(()=>{const e=document.elementFromPoint(${c?.x},${c?.y}); return e.tagName+'.'+e.className})()`))
+  console.log('   TANI çerçeve:', await cer.m1.ev(`JSON.stringify({sy:scrollY, h1:document.querySelector('h1').getBoundingClientRect().y, ins: !!document.getElementById('__rs_overlay__')})`))
+}
 k('Denetçi: tıklanan eleman alt panelde', !!ck && /h1/i.test(ck.metin), (ck?.metin ?? '').slice(0, 120))
 const vur = { t1: await golgeSinifVar('t1', 'hl'), d1: await golgeSinifVar('d1', 'hl') }
 k('Denetçi: aynı eleman diğer ekranlarda vurgulandı', vur.t1 === true && vur.d1 === true, JSON.stringify(vur))
