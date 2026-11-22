@@ -34,6 +34,8 @@ export interface FrameInfo {
   overflow?: boolean
   error?: string
   ready?: boolean
+  cover?: boolean
+  tema?: string
 }
 
 export interface AppState {

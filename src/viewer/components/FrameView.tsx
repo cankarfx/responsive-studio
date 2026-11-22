@@ -3,8 +3,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import type { DeviceSpec, Frame, FramePayload } from '@/lib/types'
 import { buildUaData, buildUserAgent } from '@/lib/ua'
 import { withPayload } from '@/lib/payload'
+import { insetsFor } from '@/lib/safearea'
+import { StatusBar } from './StatusBar'
 import { actions, frameSize, getState, tools, useApp } from '../store'
-import { registerFrame, sendTo, TOKEN } from '../bus'
+import { bg, registerFrame, sendTo, TOKEN } from '../bus'
 import {
   IcCamera, IcClose, IcExternal, IcEyeOff, IcMinus, IcPlus, IcReload, IcRotate, IcTarget, IcWarn,
 } from './Icons'
@@ -17,6 +19,16 @@ const IFRAME_ALLOW = [
 
 /* Üst pencereyi ele geçirmeye (frame-busting) izin vermeyen izin listesi.
    allow-top-navigation* bilerek DIŞARIDA bırakıldı. */
+/** Çerçevede JS'ten gizlenecek çerezlerin anlık görüntüsü (en fazla 300 ms). */
+async function cerezAnlik(url: string): Promise<FramePayload['ck'] | null> {
+  let o: string
+  try { o = new URL(url).origin } catch { return null }
+  if (!/^https?:/.test(o)) return null
+  const yanit = bg<{ ok?: boolean; cookies?: { name: string; value: string }[] }>({ t: 'cookiesFor', url, hidden: true })
+  const r = await Promise.race([yanit, new Promise<null>((res) => setTimeout(() => res(null), 300))])
+  return r?.ok && r.cookies?.length ? { o, l: r.cookies } : null
+}
+
 const SANDBOX = [
   'allow-same-origin', 'allow-scripts', 'allow-forms', 'allow-popups',
   'allow-popups-to-escape-sandbox', 'allow-modals', 'allow-downloads',
@@ -36,6 +48,14 @@ export function FrameView({ frame, device, scale, index }: Props) {
   const host = useRef<HTMLDivElement>(null)
   const { w, h } = frameSize(frame)
   const info = app.frameInfo[frame.fid] ?? {}
+
+  /* DURUM ÇUBUĞU: dikey telefonda üst güvenli alan kadar. Sayfa viewport-fit=cover
+     değilse site çubuğun altından başlar (gerçek Safari gibi) — görünen yükseklik
+     o kadar azalır. Ekran başlığındaki ölçü cihazınki olarak kalır. */
+  const saAcik = app.chromeOpts.safeArea && !!device.safeArea
+  const sbH = saAcik && !frame.landscape ? device.safeArea!.top : 0
+  const ust = sbH > 0 && !info.cover ? sbH : 0
+  const vh = Math.max(50, h - ust)
   const solo = app.sync.soloFid
   const dimmed = solo != null && solo !== frame.fid
 
@@ -85,6 +105,7 @@ export function FrameView({ frame, device, scale, index }: Props) {
       touchMode: device.touch && app.settings.touchMode,
       colorScheme: frame.colorScheme,
       safeArea: device.safeArea ?? null,
+      insets: insetsFor(device.safeArea, frame.landscape, app.chromeOpts.safeArea),
       showScrollbars: app.chromeOpts.scrollbars,
       os: device.os,
       platform: device.os === 'ios' ? 'iPhone'
@@ -99,7 +120,7 @@ export function FrameView({ frame, device, scale, index }: Props) {
     el.setAttribute('referrerpolicy', 'no-referrer-when-downgrade')
     el.setAttribute('title', device.name)
     el.width = String(w)
-    el.height = String(h)
+    el.height = String(vh)
     /* name yedek kanal; asıl yapılandırma fragment'ta (bkz. lib/payload.ts) */
     el.name = '__RSTUDIO__' + JSON.stringify(payload)
 
@@ -114,14 +135,21 @@ export function FrameView({ frame, device, scale, index }: Props) {
     /* KADEMELİ YÜKLEME: sekiz ekranın aynı anda istek atması, hız sınırı olan
        sunucularda 429 (Too Many Requests) üretiyor ve sayfa hatalı yükleniyor.
        Küçük bir gecikme bunu önler; ilk ekran beklemeden başlar. */
-    const src = withPayload(app.url, payload)
     const gecikme = index * (app.settings.loadStagger ?? 0)
     let zaman = 0
-    if (gecikme > 0) zaman = setTimeout(() => { el.src = src }, gecikme) as unknown as number
-    else el.src = src
+    let iptal = false
+    /* Sitenin JS'ten gizlenen çerezlerini yükle birlikte gönder ki sayfanın ilk
+       satırı bile görsün (bkz. content/cookies.ts); en fazla 300 ms beklenir. */
+    const yukle = async () => {
+      const ck = await cerezAnlik(app.url)
+      if (iptal) return
+      el.src = withPayload(app.url, ck ? { ...payload, ck } : payload)
+    }
+    if (gecikme > 0) zaman = setTimeout(() => { void yukle() }, gecikme) as unknown as number
+    else void yukle()
     registerFrame(frame.fid, el)
 
-    return () => { clearTimeout(zaman); registerFrame(frame.fid, null) }
+    return () => { iptal = true; clearTimeout(zaman); registerFrame(frame.fid, null) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
@@ -130,8 +158,17 @@ export function FrameView({ frame, device, scale, index }: Props) {
     const el = host.current?.firstElementChild as HTMLIFrameElement | null
     if (!el) return
     el.width = String(w)
-    el.height = String(h)
-  }, [w, h])
+    el.height = String(vh)
+  }, [w, vh])
+
+  /* Güvenli alan ayarı ya da yön değişince sayfanın env(safe-area-inset-*)
+     değerlerini canlı güncelle (yükte ilk değer zaten var) */
+  const insetKey = JSON.stringify(insetsFor(device.safeArea, frame.landscape, app.chromeOpts.safeArea))
+  const ilkInset = useRef(true)
+  useEffect(() => {
+    if (ilkInset.current) { ilkInset.current = false; return }
+    sendTo(frame.fid, { t: 'safeArea', insets: JSON.parse(insetKey) })
+  }, [insetKey])
 
   useEffect(() => () => registerFrame(frame.fid, null), [frame.fid])
 
@@ -348,7 +385,13 @@ export function FrameView({ frame, device, scale, index }: Props) {
            onDragOver={(e) => { if (e.dataTransfer?.types.includes('Files')) e.preventDefault() }}
            onDrop={(e) => onDrop(e as unknown as DragEvent)}>
         <div ref={host} class="frame-scaler"
-             style={{ transform: `scale(${scale})`, width: `${w}px`, height: `${h}px` }} />
+             style={{ transform: `scale(${scale})`, width: `${w}px`, height: `${vh}px`, top: `${Math.round(ust * scale)}px` }} />
+
+        {sbH > 0 && (
+          <StatusBar w={w} yuk={sbH} scale={scale} os={device.os}
+                     kamera={island ? 'island' : notch ? 'notch' : 'none'}
+                     tema={info.tema} cover={!!info.cover} />
+        )}
 
         {island && !frame.landscape && (
           <div class="island" style={{

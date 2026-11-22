@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Responsive Studio",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Açık olan siteyi onlarca cihaz boyutunda aynı anda, canlı ve etkileşimli görüntüleyin. Profesyonel responsive test stüdyosu.",
   "minimum_chrome_version": "120",
   "icons": {
@@ -27,9 +27,7 @@
     "storage",
     "scripting",
     "contextMenus",
-    "declarativeNetRequestWithHostAccess"
-  ],
-  "optional_permissions": [
+    "declarativeNetRequestWithHostAccess",
     "cookies"
   ],
   "host_permissions": [

@@ -652,7 +652,7 @@ k('onaydan sonra çalışma alanı silindi', (await bekleKosul(durum, (x) => x.w
 
 bolum('G. YAN PANEL — ayarlar')
 await tikla('Görünüm, tema ve gelişmiş ayarlar'); await sleep(300)
-for (const [ad, anahtar] of [['Cihaz çerçevesi', 'bezel'], ['Çentik / güvenli alan', 'safeArea'], ['Başlık etiketleri', 'labels'], ['Tuval ızgarası', 'canvasGrid'], ['Kaydırma çubukları', 'scrollbars']]) {
+for (const [ad, anahtar] of [['Cihaz çerçevesi', 'bezel'], ['Durum çubuğu / güvenli alan', 'safeArea'], ['Başlık etiketleri', 'labels'], ['Tuval ızgarası', 'canvasGrid'], ['Kaydırma çubukları', 'scrollbars']]) {
   const once1 = (await durum()).chromeOpts?.[anahtar]
   await tikla(ad, { kapsam: '.sidebar', secici: '.set-row' }); await sleep(300)
   const sonra1 = (await durum()).chromeOpts?.[anahtar]

@@ -1,0 +1,2 @@
+/* Dış (cross-origin) stylesheet'te güvenli alan */
+footer { padding-bottom: max(env(safe-area-inset-bottom), 4px); background: #0b2239 }

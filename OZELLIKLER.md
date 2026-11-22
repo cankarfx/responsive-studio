@@ -10,7 +10,7 @@
 | Adres çubuğu | Stüdyo içinden istediğiniz adrese gidin (Ctrl+L) |
 | Geri / İleri / Yenile | Tüm ekranlarda aynı anda gezinme ve yenileme (Ctrl+R) |
 | Otomatik yenileme | Sayfayı belirli aralıklarla kendiliğinden yeniler |
-| Giriş yapılmış siteler | Oturumunuz açık kalır; üye paneli, yönetim ekranı gibi sayfalar da test edilir |
+| Giriş yapılmış siteler | Oturumunuz açık kalır; üye paneli, yönetim ekranı gibi sayfalar da test edilir. Bir kez normal sekmede giriş yapmanız yeterli (Google/Apple ile giriş ekranları stüdyonun içinde açılmaz) |
 | iframe engellerini aşma | Kendini çerçeve içinde göstermeyi reddeden siteler de açılır |
 | Yerel geliştirme | `localhost`, yerel IP ve `file://` adresleri desteklenir |
 | Yüklenemeyen ekran uyarısı | Açılamayan ekran için nedenini anlatan uyarı bandı çıkar |
@@ -32,6 +32,7 @@
 | Sık kullanılanlar | En çok kullandığınız cihazları yıldızlayıp üstte tutun |
 | Tarayıcı profilleri | Chrome, Edge, Firefox, Safari, Opera, Samsung Internet, WebView kimliğiyle açın |
 | Cihaz çerçevesi | Telefon kasası, çentik, Dynamic Island ve ana ekran çubuğu göstergesi |
+| Durum çubuğu ve güvenli alan | Saat, sinyal ve pil çubuğu; site gerçek telefondaki gibi altından başlar. Tam ekran (`viewport-fit=cover`) sitelerde `env(safe-area-inset-*)` cihazın gerçek değerini alır |
 | Çevirme | Ekranı tek tek ya da hepsini birden dikey/yatay çevirin (R) |
 | Serbest boyutlandırma | Ekran kenarından sürükleyerek boyutu değiştirin, ölçü canlı görünür |
 | Sürükleyerek sıralama | Ekranı başlığından tutup istediğiniz yere taşıyın, sıra kaydedilir |

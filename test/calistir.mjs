@@ -38,6 +38,8 @@ const PAKETLER = [
   'guvenlik',    // viewer sitelere kapalı, SW komut doğrulaması, sahte mesaj eleme
   'kullanici',   // her düğme gerçek fare/klavyeyle: senkron, tek-ekran, menüler, yan panel, kısayollar
   'sekmeler',    // iki stüdyo sekmesi birbirinin ekran düzenini ezmez
+  'oturum',      // giriş yapılmış siteler: Lax çerezler JS'e görünür, HttpOnly korunur
+  'durum',       // telefon durum çubuğu; env(safe-area-inset-*) viewport-fit=cover sitelerde
 ]
 
 const bekle = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -55,6 +57,7 @@ function kur() {
   mkdirSync(PROFIL, { recursive: true })
   spawn('node', [resolve(DIR, 'serve.mjs')], { detached: true, stdio: 'ignore' }).unref()
   spawn('node', [resolve(DIR, 'cdn-serve.mjs')], { detached: true, stdio: 'ignore' }).unref()
+  spawn('node', [resolve(DIR, 'oturum-serve.mjs')], { detached: true, stdio: 'ignore' }).unref()
   spawn(CHROME, [
     `--user-data-dir=${PROFIL}`,
     '--enable-unsafe-extension-debugging',   // CDP ile eklenti yüklemek için şart
@@ -63,6 +66,9 @@ function kur() {
     '--window-size=1600,1100',
     '--auto-accept-this-tab-capture',        // kayıt testi izin penceresi açmasın
     '--auto-select-desktop-capture-source=Responsive Studio',
+    /* oturum testi: *.rs.test → yerel https sunucusu (geçici, kendinden imzalı sertifika) */
+    '--host-resolver-rules=MAP *.rs.test 127.0.0.1, MAP *.rs2.test 127.0.0.1',
+    '--ignore-certificate-errors',
     'about:blank',
   ], { detached: true, stdio: 'ignore' }).unref()
 }
@@ -71,6 +77,7 @@ function kapat() {
   spawnSync('pkill', ['-f', `user-data-dir=${PROFIL}`])
   spawnSync('pkill', ['-f', 'test/serve.mjs'])
   spawnSync('pkill', ['-f', 'test/cdn-serve.mjs'])
+  spawnSync('pkill', ['-f', 'test/oturum-serve.mjs'])
 }
 
 const arg = process.argv.slice(2)

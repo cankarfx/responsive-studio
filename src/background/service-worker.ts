@@ -336,8 +336,107 @@ chrome.tabs.onUpdated.addListener(async (tabId, info) => {
 
 /* ─── Viewer ↔ SW mesajlaşması ───────────────────────────────────── */
 
-/** Content script'lerin de gönderebildiği tek komut; geri kalanı yalnızca stüdyo sayfasına açık. */
-const CONTENT_ALLOWED = new Set(['fetch'])
+/** Content script'lerin de gönderebildiği komutlar; geri kalanı yalnızca stüdyo sayfasına açık. */
+const CONTENT_ALLOWED = new Set(['fetch', 'frameCookies', 'frameCookieSet'])
+
+/* ─── Çerez köprüsü (bkz. content/cookies.ts) ────────────────────────
+ * Stüdyo çerçevesinde Chrome, SameSite=Lax/Strict çerezleri sayfanın
+ * JavaScript'inden gizliyor (ağ isteklerinde ise gönderiyor). Buradan yalnızca
+ * İSTEYEN ÇERÇEVENİN KENDİ adresine ait, HttpOnly OLMAYAN çerezler verilir;
+ * adres `sender.url`'den gelir (Chrome doldurur, sayfa taklit edemez). */
+
+/** İstek stüdyo sekmesinin içindeki bir site çerçevesinden mi? */
+async function fromViewerFrame(sender: chrome.runtime.MessageSender): Promise<boolean> {
+  return sender.id === chrome.runtime.id
+    && sender.tab?.id != null && sender.frameId != null && sender.frameId !== 0
+    && isWebUrl(sender.url)
+    && (await getViewerTabs()).includes(sender.tab.id)
+}
+
+/** JavaScript'in normalde görebileceği ama stüdyoda gizlenen çerezler */
+function hiddenFromScript(c: chrome.cookies.Cookie): boolean {
+  return !c.httpOnly && c.sameSite !== 'no_restriction'
+}
+
+/**
+ * `document.cookie = '...'` metnini chrome.cookies.set ayrıntısına çevirir.
+ * Tarayıcının sayfaya uyguladığı kurallar korunur: HttpOnly yazılamaz, alan
+ * sayfanın kendi alan adı (ya da üst alanı) olmalı, Secure yalnızca https'te.
+ */
+function parseCookieWrite(raw: string, pageUrl: string):
+  | { kind: 'set'; details: chrome.cookies.SetDetails }
+  | { kind: 'remove'; url: string; name: string }
+  | null {
+  const u = new URL(pageUrl)
+  const host = u.hostname.toLowerCase()
+  const parts = raw.split(';')
+  const first = parts.shift() ?? ''
+  const eq = first.indexOf('=')
+  if (eq <= 0) return null
+  const name = first.slice(0, eq).trim()
+  const value = first.slice(eq + 1).trim()
+  if (!name || /[\s;,]/.test(name)) return null
+  let domain: string | undefined
+  let path: string | undefined
+  let secure = false
+  let sameSite = 'unspecified'
+  let maxAge: number | null = null
+  let expires: number | null = null
+  for (const part of parts) {
+    const i = part.indexOf('=')
+    const k = (i >= 0 ? part.slice(0, i) : part).trim().toLowerCase()
+    const v = i >= 0 ? part.slice(i + 1).trim() : ''
+    if (k === 'httponly') return null
+    if (k === 'domain' && v) domain = v.toLowerCase().replace(/^\./, '')
+    else if (k === 'path' && v.startsWith('/')) path = v
+    else if (k === 'secure') secure = true
+    else if (k === 'max-age' && /^-?\d+$/.test(v)) maxAge = Number(v)
+    else if (k === 'expires') { const t = Date.parse(v); if (!Number.isNaN(t)) expires = t }
+    else if (k === 'samesite') {
+      const x = v.toLowerCase()
+      sameSite = x === 'strict' ? 'strict' : x === 'lax' ? 'lax' : x === 'none' ? 'no_restriction' : 'unspecified'
+    }
+  }
+  if (domain && host !== domain && !host.endsWith(`.${domain}`)) return null
+  if (secure && u.protocol !== 'https:') return null
+  if (sameSite === 'no_restriction' && !secure) return null
+  if (name.startsWith('__Secure-') && !secure) return null
+  if (name.startsWith('__Host-') && (!secure || domain || (path ?? '/') !== '/')) return null
+  if (!path) {
+    const dir = u.pathname.slice(0, u.pathname.lastIndexOf('/'))
+    path = dir || '/'
+  }
+  const scheme = u.protocol === 'https:' ? 'https' : 'http'
+  /* Adres DAİMA sayfanın kendi alan adı: Chrome `domain`'i buna göre doğrular ve
+     üst alan uzantılarını (com, co.uk, github.io…) reddeder. `domain`'den adres
+     kurmak, "test" gibi bir uzantının kendisine çerez yazdırabiliyordu. */
+  const cookieUrl = `${scheme}://${host}${path}`
+  const gone = maxAge !== null ? maxAge <= 0 : expires !== null && expires < Date.now()
+  if (gone) return { kind: 'remove', url: cookieUrl, name }
+  const details: chrome.cookies.SetDetails = { url: cookieUrl, name, value, path, secure, sameSite: sameSite as chrome.cookies.SameSiteStatus }
+  if (domain) details.domain = domain
+  if (maxAge !== null) details.expirationDate = Date.now() / 1000 + maxAge
+  else if (expires !== null) details.expirationDate = expires / 1000
+  return { kind: 'set', details }
+}
+
+/* Sunucu (Set-Cookie) ya da başka bir ekran çerezi değiştirdiğinde stüdyo
+   çerçevelerine bildir; her çerçeve yalnızca kendi alanına uyanı alır. */
+try {
+  chrome.cookies?.onChanged.addListener(async ({ removed, cookie }) => {
+    if (!hiddenFromScript(cookie)) return
+    const tabs = await getViewerTabs()
+    for (const id of tabs) {
+      chrome.tabs.sendMessage(id, {
+        t: 'rsCookie',
+        c: {
+          name: cookie.name, value: cookie.value, removed, domain: cookie.domain,
+          hostOnly: cookie.hostOnly, path: cookie.path, secure: cookie.secure,
+        },
+      }).catch(() => { /* çerçeve yok */ })
+    }
+  })
+} catch { /* izin yok */ }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const tabId = sender.tab?.id
@@ -372,10 +471,40 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           sendResponse({ ok: true, count: n })
           break
         }
+        case 'frameCookies': {
+          if (!chrome.cookies || !(await fromViewerFrame(sender))) { sendResponse({ ok: false }); break }
+          const list = await chrome.cookies.getAll({ url: sender.url! })
+          sendResponse({
+            ok: true,
+            cookies: list.filter(hiddenFromScript).map((c) => ({ name: c.name, value: c.value })),
+          })
+          break
+        }
+        case 'frameCookieSet': {
+          if (!chrome.cookies || !(await fromViewerFrame(sender)) || typeof msg.raw !== 'string' || msg.raw.length > 4096) {
+            sendResponse({ ok: false }); break
+          }
+          const w = parseCookieWrite(msg.raw, sender.url!)
+          if (!w) { sendResponse({ ok: false, error: 'Geçersiz çerez' }); break }
+          /* Sayfa JavaScript'i HttpOnly bir çerezi ezemez ya da silemez — burada da */
+          const name = w.kind === 'set' ? w.details.name! : w.name
+          const url = w.kind === 'set' ? w.details.url : w.url
+          const existing = await chrome.cookies.getAll({ url, name })
+          if (existing.some((c) => c.httpOnly)) { sendResponse({ ok: false, error: 'HttpOnly' }); break }
+          if (w.kind === 'remove') await chrome.cookies.remove({ url: w.url, name: w.name })
+          else await chrome.cookies.set(w.details)
+          sendResponse({ ok: true })
+          break
+        }
         case 'cookiesFor': {
           if (!chrome.cookies) { sendResponse({ ok: false, error: 'İzin yok' }); break }
+          if (!isWebUrl(msg.url)) { sendResponse({ ok: false, error: 'Geçersiz adres' }); break }
           const list = await chrome.cookies.getAll({ url: msg.url })
-          sendResponse({ ok: true, cookies: list })
+          /* hidden: yalnızca çerçevede JS'ten gizlenenler, yalnızca ad/değer (ekran yükü için) */
+          sendResponse({
+            ok: true,
+            cookies: msg.hidden ? list.filter(hiddenFromScript).map((c) => ({ name: c.name, value: c.value })) : list,
+          })
           break
         }
         case 'cookieRemove': {

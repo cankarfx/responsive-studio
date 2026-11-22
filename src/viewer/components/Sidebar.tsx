@@ -344,7 +344,7 @@ function SettingsPanel() {
       <div class="group-title">Görünüm</div>
       <Toggle label="Cihaz çerçevesi" hint="Ekranı telefon gövdesi içinde göster"
               on={c.bezel} onChange={(v) => actions.setChromeOpts({ bezel: v })} />
-      <Toggle label="Çentik / güvenli alan" hint="Çentik ve ana ekran çubuğunu görsel olarak işaretle"
+      <Toggle label="Durum çubuğu / güvenli alan" hint="Saat-pil çubuğu, çentik ve ana ekran çizgisi; site çubuğun altından başlar, viewport-fit=cover sitelerde env(safe-area-inset-*) gerçek değerini alır"
               on={c.safeArea} onChange={(v) => actions.setChromeOpts({ safeArea: v })} />
       <Toggle label="Başlık etiketleri" hint="Cihaz adı, ölçü ve araçları göster"
               on={c.labels} onChange={(v) => actions.setChromeOpts({ labels: v })} />

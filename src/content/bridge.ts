@@ -15,6 +15,8 @@ import {
   forceHeight, highlightPath, initInspect, observeVitals, runScan, setFilter, setTool, storageOp,
 } from './inspect'
 import { applyMedia, setTextScale, setVision } from './media'
+import { startCookieBridge } from './cookies'
+import { durumRengi, sayfaCover, setSafeArea } from './safearea'
 
 const EXT_ORIGIN = chrome.runtime.getURL('').replace(/\/$/, '')
 
@@ -24,13 +26,18 @@ if (cfg && insideViewer(EXT_ORIGIN)) start(cfg)
 
 function start(c: FramePayload) {
   const { token, fid } = c
+  /* Başka kökenin çerez anlık görüntüsü burada tutulmaz (bkz. emulation.ts) */
+  if (c.ck?.o !== location.origin) delete c.ck
+  startCookieBridge(token, (l) => { c.ck = { o: location.origin, l } })
+  setSafeArea(c.insets ?? null)
 
   /* Aynı-origin gezinmede yapılandırma kaybolmasın diye window.name'de tut.
-     (Cross-origin gezinmede Chrome bunu sıfırlar; o durumda viewer yeniden yükler.) */
-  const nameValue = '__RSTUDIO__' + JSON.stringify(c)
-  try { window.name = nameValue } catch { /* yoksay */ }
+     (Cross-origin gezinmede Chrome bunu sıfırlar; o durumda viewer yeniden yükler.)
+     Kapanırken GÜNCEL çerez görüntüsüyle yazılır ki sonraki sayfa anında görsün. */
+  const nameValue = () => '__RSTUDIO__' + JSON.stringify(c)
+  try { window.name = nameValue() } catch { /* yoksay */ }
   window.addEventListener('beforeunload', () => {
-    try { window.name = nameValue } catch { /* yoksay */ }
+    try { window.name = nameValue() } catch { /* yoksay */ }
   }, true)
 
   /* Kaydırma çubuklarını gizle — gerçek mobil cihazlarda bindirmeli (overlay)
@@ -157,6 +164,10 @@ function start(c: FramePayload) {
       case 'textScale':
         setTextScale(m.percent)
         break
+      case 'safeArea':
+        c.insets = m.insets
+        setSafeArea(m.insets)
+        break
       case 'storageOp':
         storageOp(m.op, m.area, m.key)
         void runScan('storage').then((data) => send({ t: 'scan', fid, what: 'storage', data }))
@@ -267,13 +278,22 @@ function start(c: FramePayload) {
   setInterval(checkUrl, 700)
 
   /* ─── Ölçüm raporu ───────────────────────────────────────────── */
+  let sonCubuk = ''
   function reportMetrics() {
+    const cover = sayfaCover()
+    const tema = durumRengi()
+    sonCubuk = `${cover}|${tema}`
     send({
       t: 'metrics', fid,
       scrollHeight: docH(), scrollWidth: docW(),
       overflow: docW() > window.innerWidth + 1,
+      cover, tema,
     })
   }
+  /* Durum çubuğu rengi/viewport-fit değişince (SPA, tema geçişi) yeniden bildir */
+  setInterval(() => {
+    if (document.readyState !== 'loading' && `${sayfaCover()}|${durumRengi()}` !== sonCubuk) reportMetrics()
+  }, 900)
 
   /* Parmak modu sayfa yüklenir yüklenmez uygulanmalı — hover stilleri hiç
      görünmeden nötrlensin. Viewer ayrıca değişimlerde `media` mesajı yollar. */

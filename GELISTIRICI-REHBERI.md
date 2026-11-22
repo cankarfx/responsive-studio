@@ -33,7 +33,7 @@ npm install
 npm run build          # dist/ üretir — Chrome'a YÜKLENEN klasör burasıdır
 npm run dev            # esbuild + vite izleme modu
 npm run typecheck      # tsc --noEmit
-npm test               # gerçek Chrome'da 18 test paketi (§9)
+npm test               # gerçek Chrome'da 20 test paketi (§9)
 ```
 
 Chrome'a yükleme: `chrome://extensions` → Geliştirici modu → **Paketlenmemiş öğe yükle** →
@@ -135,10 +135,10 @@ de güncelle — ikisi de tam sayı karşılaştırıyor.
 | Sorumluluk | Not |
 |---|---|
 | Viewer sekmesi açma ve takibi | `chrome.storage.session` içinde `viewerTabs`; canlılık `runtime.getContexts` ile (`tabs` izni yok) |
-| Gönderen doğrulaması | `fromViewer(sender)`: yalnızca ana çerçevedeki stüdyo sayfası; içerik betiklerine yalnızca `fetch` açık (§8.1) |
+| Gönderen doğrulaması | `fromViewer(sender)`: yalnızca ana çerçevedeki stüdyo sayfası; içerik betiklerine yalnızca `fetch`, `frameCookies`, `frameCookieSet` açık (§8.1) |
 | DNR kuralları | `RULE_HEADERS=1000` (X-Frame-Options/CSP sil), `RULE_UA=1001`, `RULE_HEADERS_CUSTOM=1002` |
 | Content script kayıt/kaldırma | Yalnızca viewer açıkken; normal gezinmeye hiç dokunulmaz |
-| Mesaj komutları | `registerViewer` `setHttpUserAgent` `setCustomHeaders` `cookiesFor` `cookieRemove` `cookieClearAll` `captureVisible` `fetch` `openTab` |
+| Mesaj komutları | `registerViewer` `setHttpUserAgent` `setCustomHeaders` `cookiesFor` (`hidden:true` → ekran yükü için anlık görüntü) `cookieRemove` `cookieClearAll` `captureVisible` `fetch` `openTab` · çerçeveden: `frameCookies` `frameCookieSet` · SW → çerçeve: `rsCookie` |
 
 **Kritik:** DNR kuralları `condition.tabIds` ile **yalnızca stüdyo sekmesine** bağlı.
 `tabIds` sadece *session-scoped* kurallarda destekleniyor. Bu kısıt kaldırılırsa kullanıcının
@@ -152,6 +152,7 @@ normal gezinme güvenliği bozulur.
 | `bridge.ts` | ISOLATED | Mesaj yönlendirme, senkron kaydırma/tıklama/giriş/hover/gezinme, ölçüm raporu |
 | `inspect.ts` | ISOLATED | Bindirme araçları (kontur, taşma, ızgara, denetçi, cetvel) + tüm `runScan` taramaları |
 | `media.ts` | ISOLATED | Gerçek CSS medya emülasyonu, `:hover` nötrleme, görme simülasyonu, metin ölçeği, parmak imleci |
+| `safearea.ts` | ISOLATED | `env(safe-area-inset-*)` → piksel (yalnızca `viewport-fit=cover`), durum çubuğu rengi (`theme-color` / üst arka plan) |
 | `touch.ts` | ISOLATED | Sürükleyerek kaydırma, ivme, dokunuş/sürükleme ayrımı |
 | `a11y.ts` | ISOLATED | Kontrast, başlık, landmark, alt metin, tab sırası, dokunma hedefi, axe-core, PWA |
 
@@ -178,7 +179,7 @@ normal gezinme güvenliği bozulur.
 ### Viewer → çerçeve (`ToFrameMessage`)
 
 `scroll` `click` `input` `hover` `key` `ping` `css` `js` `measure` `reload`
-`tool` `scan` `highlight` `setHeight` `scrollTo` `filter` `media` `vision` `textScale` `storageOp`
+`tool` `scan` `highlight` `setHeight` `scrollTo` `filter` `media` `vision` `textScale` `safeArea` `storageOp`
 
 ### Çerçeve → viewer (`FromFrameMessage`)
 
@@ -208,7 +209,7 @@ AppState = {
   url, draftUrl, reloadKey, history, historyIndex,   // gezinme
   frames: Frame[], layout, zoom, gap,                // tuval
   sync, chromeOpts, settings, workspaces,            // ayarlar
-  media, vision, textScale,                          // emülasyon
+  media, vision, textScale, safeArea,                         // emülasyon
   tool, grid, drawer, scans, consoleLogs,            // araçlar
   inspected, overflowItems, capture, recording,
   panel, frameInfo, toast,
@@ -288,6 +289,8 @@ için çoğu tarama **ilk hazır çerçevede** çalışır (`scan`), ekrana gör
 | Özel başlık kuralını alan adı sınırsız kurmak | `Authorization` üçüncü taraf CDN'lere gider | `requestDomains: [host]` |
 | `postMessage(..., '*')` ile üst pencereye yazmak | İç içe gömülü çerçeveler dinler | Hedef = `location.ancestorOrigins[0]` |
 | Kayıtta tüm durumu tek parça yazmak | Açık ikinci stüdyo sekmesinin herhangi bir değişikliği (adres bile) diğerinin ekran düzenini ezer | Yalnızca değişen dilimleri `storedCache` üzerine birleştir (`test/sekmeler.mjs`) |
+| Stüdyo çerçevesinde çerezin "giriş yapılmış" demesine güvenmek | Chrome, üst sayfa eklenti olunca Lax/Strict (ve ayarsız) çerezleri istekte gönderir ama `document.cookie`'den gizler — site çıkış yapmış görünür | Çerez köprüsü (`content/cookies.ts`): anlık görüntü yükle gelir, SW tazeler, `cookies.onChanged` yayınlar (`test/oturum.mjs`) |
+| Çerez yazarken adresi `domain`'den kurmak | `domain=test` gibi bir uzantı, adresin host'u olunca Chrome'ca geçerli sayılıyor | Adres her zaman sayfanın kendi host'u; `domain` ayrı verilir |
 | `pagehide`'da koşulsuz kaydetmek | Testin `storage.clear`'ından sonra eski durum geri yazılır | `dirty` bayrağı — yalnızca değişiklik varsa |
 | Tek-ekran modunda kaynak ekranı yine yayınlamak | "Yalnızca bu ekranda çalış" seçilen ekran diğerlerini sürüklemeye devam eder | `bus.ts` → `shouldMirror`: `soloFid` varken hiç yansıtma; gezinme de yalnızca o ekran |
 | Canlı uygulanabilen bir ayarı iframe anahtarına (`key`) koymak | Her geçişte tüm ekranlar baştan yüklenir, form ve kaydırma kaybolur | `FrameView.tsx` anahtarında yalnızca gerçekten yeniden yükleme gerektirenler (colorScheme yok) |
@@ -314,6 +317,7 @@ kendisi sorar:
 | Viewer → pano | Yalnızca `#rrggbb` biçimli renk kodu | `viewer/bus.ts` |
 | MAIN ↔ ISOLATED | Jeton + `e.source === window` | `emulation.ts` |
 | Service worker | `fromViewer(sender)`; `fetch` yalnızca stüdyo sekmesinin çerçevelerinden | `service-worker.ts` |
+| Çerez köprüsü | Adres `sender.url`'den (sayfa taklit edemez); yalnızca HttpOnly OLMAYAN ve JS'ten gizlenen çerezler; yazmada HttpOnly reddi, mevcut HttpOnly çerez ezilemez, `domain` sayfanın alanı olmalı ve adres DAİMA sayfanın kendi host'u (Chrome üst alan uzantılarını reddeder); ekran yükündeki anlık görüntü yalnızca aynı kökende kullanılır, yönlendirmede atılır | `service-worker.ts`, `content/cookies.ts` |
 | SW `fetch` | `credentials:'omit'`, `cache:'no-store'`, http(s), özel ağ adresi (ve oraya yönlendirme) yalnızca önizlenen site de yereldeyse, `kind` → içerik türü denetimi | `service-worker.ts` |
 | DNR kuralları | `tabIds` = stüdyo sekmeleri; `main_frame` yok; özel başlıklar `requestDomains` | `service-worker.ts` |
 | WAR | Yalnızca `axe.min.js` — siteler `viewer.html`'i gömemez | `public/manifest.json` |
@@ -334,7 +338,7 @@ Testler **gerçek Chrome'da**, Chrome DevTools Protocol üzerinden çalışır �
 iframe'ler, gerçek cross-origin yükleme, gerçek fare olayları.
 
 ```bash
-npm test                     # 18 paketin tamamı
+npm test                     # 20 paketin tamamı
 node test/calistir.mjs faz3  # yalnızca seçilenler
 npm run test:kur             # Chrome + sunucuları açık bırak (elle inceleme)
 ```
@@ -351,6 +355,8 @@ npm run test:kur             # Chrome + sunucuları açık bırak (elle inceleme
 | `sirala` | Ekranları başlıktan sürükleyerek yeniden sıralama |
 | `ui` | Menü kırpılması, ipucu, araç çubuğu taşması |
 | `kayit` | WebM ekran kaydı |
+| `oturum` | Giriş yapılmış site (https, `*.rs.test` → `oturum-serve.mjs`): Lax/ayarsız çerezler ilk satırdan görünür, yazma/silme depoya ve diğer ekranlara geçer, sunucu çerezi yayılır; HttpOnly görünmez/ezilemez, yabancı alan ve uzantı reddi, başka siteye yönlendirmede sızıntı yok |
+| `durum` | Durum çubuğu: sıradan site çubuğun altından başlar (innerHeight = cihaz − üst güvenli alan), çubuk sitenin rengini alır; `viewport-fit=cover` sitede çubuk saydam, `env()` aynı-origin / `@media` / satır içi / cross-origin / geç stilde gerçek değer; yatayda yanlara geçer; ayar canlı açılıp kapanır |
 | `sekmeler` | İki stüdyo sekmesi: biri diğerinin ekran düzenini ezmez, yenilenen sekme kendi düzenine döner, ayarlar taşınır, depo temizlenince sekme kopyası diriltilmez |
 | `kullanici` | **Her düğme gerçek fare/klavye olayıyla** — senkron (kaydırma/tıklama/giriş/hover/gezinme), tek-ekran modu, üst çubuk, ekran başlığı, bindirmeler, tüm menü maddeleri, yan panel (arama, ölçü ekleme, setler, özel cihaz, çalışma alanı, ayarlar, dışa/içe aktarma), kısayollar, boyutlandırma, Temizle. Ayrıca hiçbir ayarın ekranları beklenmedik şekilde yeniden yüklemediğini doğrular |
 | `guvenlik` | A: WAR kapalı · B: SW komut yetkisi · C: sahte mesaj/pano/iç içe çerçeve · D: kural temizliği · E: normal sekmeden sızdırma girişimi (8897'de kötü sunucu) · F: başlık kapsamı · G: başlıklar yeni oturumda · H: yüklenemeyen ekran uyarısı · I: tek ekran gezinmesinde emülasyon |
@@ -414,7 +420,7 @@ Ayrıntılı ölçümler YOL-HARITASI.md §2'de. Özet:
 | `prefers-*`, `pointer`, `hover` CSS'i | ✅ Stylesheet yeniden yazımıyla gerçek |
 | Frame başına UA, DPR, `screen.*`, dokunma | ✅ JS düzeyinde |
 | Frame başına gerçek HTTP `User-Agent` başlığı | ⛔ Chrome alt çerçevede desteklemiyor; sekme geneli tek UA mümkün |
-| `env(safe-area-inset-*)` | ⛔ Değiştirilemiyor; çentik yalnızca görsel çizilir |
+| `env(safe-area-inset-*)` | ✅ `viewport-fit=cover` sitelerde cihazın gerçek değeri (stylesheet yeniden yazımı; harici, geç eklenen ve satır içi CSS dahil). Sıradan siteler durum çubuğunun altından başlar |
 | Gerçek Safari/Firefox motoru | ⛔ Hiçbir Chrome eklentisi yapamaz |
 | Kapalı Shadow DOM | ⛔ Erişilemez (dil sınırı) |
 | Tam sayfa görüntü hızı | ⚠️ Chrome saniyede ~2 yakalama ile sınırlı |

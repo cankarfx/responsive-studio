@@ -219,10 +219,16 @@ export interface FramePayload {
   touchMode: boolean
   colorScheme: 'auto' | 'light' | 'dark'
   safeArea: SafeArea | null
+  /** Sayfaya bildirilecek `env(safe-area-inset-*)` değerleri (ayar kapalıysa null).
+   *  Yalnızca sayfa `viewport-fit=cover` kullanıyorsa uygulanır — gerçek iOS gibi. */
+  insets?: SafeArea | null
   os: DeviceOS
   platform: string
   /** Kaydırma çubukları görünsün mü (mobil cihazlarda gerçekçi olan: hayır) */
   showScrollbars: boolean
+  /** Chrome'un çerçevede JS'ten gizlediği çerezlerin anlık görüntüsü (bkz. content/cookies.ts).
+      Yalnızca `o` kökeninde kullanılır; başka kökene geçişte atılır. */
+  ck?: { o: string; l: { name: string; value: string }[] }
 }
 
 export interface UaDataOverride {
@@ -299,6 +305,7 @@ export type ToFrameMessage =
   | { t: 'media'; overrides: MediaOverrides; touch: boolean }
   | { t: 'vision'; sim: VisionSim }
   | { t: 'textScale'; percent: number }
+  | { t: 'safeArea'; insets: SafeArea | null }
   /* ── Faz 4 ── */
   | { t: 'storageOp'; op: 'clear' | 'remove'; area: 'local' | 'session'; key?: string }
 
@@ -410,7 +417,11 @@ export type FromFrameMessage =
   | { t: 'hover'; fid: string; path: string | null }
   | { t: 'key'; fid: string; path: string; key: string; code: string; ctrl: boolean; shift: boolean; alt: boolean; meta: boolean }
   | { t: 'navigate'; fid: string; url: string }
-  | { t: 'metrics'; fid: string; scrollHeight: number; scrollWidth: number; overflow: boolean }
+  | { t: 'metrics'; fid: string; scrollHeight: number; scrollWidth: number; overflow: boolean
+      /** Sayfa `viewport-fit=cover` mı (içerik durum çubuğunun altına uzanır) */
+      cover?: boolean
+      /** Durum çubuğu rengi: theme-color ya da sayfanın üst arka planı (#rrggbb) */
+      tema?: string }
   | { t: 'error'; fid: string; message: string }
   /* ── Faz 2 ── */
   | { t: 'console'; fid: string; level: 'error' | 'warn' | 'info'; text: string; source?: string }

@@ -39,7 +39,7 @@ async function elemanKoordu(secici) {
   const r = await fEval(`(()=>{const e=document.querySelector(${JSON.stringify(secici)});
     if(!e) return null; const b=e.getBoundingClientRect(); return {x:b.x+b.width/2, y:b.y+b.height/2}})()`)
   if (!r) return null
-  const kutu = await p.eval(`(()=>{const f=document.querySelector('[data-fid="m1"] .frame-box'); const b=f.getBoundingClientRect();
+  const kutu = await p.eval(`(()=>{const f=document.querySelector('[data-fid="m1"] iframe'); const b=f.getBoundingClientRect(); /* site durum çubuğunun altından başlar */
     return {x:b.x, y:b.y}})()`)
   return { x: Math.round(kutu.x + r.x), y: Math.round(kutu.y + r.y) }
 }

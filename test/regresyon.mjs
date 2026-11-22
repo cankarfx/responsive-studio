@@ -77,7 +77,10 @@ console.log('\n── MASAÜSTÜ: VIEWPORT ≠ EKRAN ──')
 const masa = veri.filter(v=>v.w>=1366)
 for (const m of masa) console.log(`   viewport ${(m.w+'×'+m.h).padEnd(11)} screen ${(m.sw+'×'+m.sh).padEnd(11)} DPR ${m.dpr}`)
 kontrol('masaüstünde ekran yüksekliği viewport’tan büyük', masa.every(m=>m.sh > m.h), `${masa.length} masaüstü ekranı`)
-kontrol('mobilde viewport = ekran', veri.filter(v=>v.w<900).every(v=>v.sh===v.h && v.sw===v.w))
+/* Durum çubuğu açıkken site çubuğun altından başlar: görünen yükseklik ekrandan
+   en fazla üst güvenli alan (≤ 62 px) kadar kısa — gerçek telefondaki gibi */
+kontrol('mobilde viewport = ekran (durum çubuğu hariç)', veri.filter(v=>v.w<900).every(v=>v.sw===v.w && v.sh>=v.h && v.sh-v.h<=62),
+  veri.filter(v=>v.w<900).map(v=>`${v.w}×${v.h}/${v.sh}`).join(' '))
 kontrol('Windows %125 ölçekleme DPR 1.25', veri.some(v=>v.w===1536 && v.dpr===1.25))
 b.close()
 console.log(`\n${hepsi ? '✅ TÜM KONTROLLER GEÇTİ' : '❌ BAŞARISIZ KONTROL VAR'}`)

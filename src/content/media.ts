@@ -44,7 +44,7 @@ let nesil = 0
 let kuyruk: Promise<void> = Promise.resolve()
 let observer: MutationObserver | null = null
 
-function swFetch(url: string): Promise<string | null> {
+export function swFetch(url: string): Promise<string | null> {
   if (fetchCache.has(url)) return Promise.resolve(fetchCache.get(url)!)
   return new Promise((resolve) => {
     try {
@@ -156,7 +156,7 @@ function restoreSheet(sheet: CSSStyleSheet) {
 /* ═══ Cross-origin stylesheet'ler ════════════════════════════════════ */
 
 /** CSS içindeki göreli adresleri mutlaklaştırır (görseller, fontlar). */
-function absolutizeUrls(css: string, base: string): string {
+export function absolutizeUrls(css: string, base: string): string {
   return css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/gi, (whole, q, u) => {
     const url = String(u).trim()
     if (/^(data:|blob:|https?:|\/\/|#)/i.test(url)) return whole
@@ -165,7 +165,7 @@ function absolutizeUrls(css: string, base: string): string {
 }
 
 /** `@import` zincirini yerinde açar ki yeniden yazım onlara da uygulansın. */
-async function inlineImports(css: string, base: string, depth = 0): Promise<string> {
+export async function inlineImports(css: string, base: string, depth = 0): Promise<string> {
   if (depth > 2) return css
   const re = /@import\s+(?:url\(\s*(['"]?)([^'")]+)\1\s*\)|(['"])([^'"]+)\3)([^;]*);/gi
   const jobs: { whole: string; url: string; media: string }[] = []
@@ -250,7 +250,7 @@ function shadowKokleri(): ShadowRoot[] {
 }
 
 /** Sayfadaki erişilebilir tüm stylesheet'leri toplar. */
-function tumSheetler(sayim?: SheetSayim): CSSStyleSheet[] {
+export function tumSheetler(sayim?: SheetSayim): CSSStyleSheet[] {
   const out: CSSStyleSheet[] = []
   const ekle = (sh: CSSStyleSheet) => { if (sh && !out.includes(sh)) out.push(sh) }
 

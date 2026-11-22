@@ -6,6 +6,7 @@
 import type { FramePayload, FromFrameMessage, ToFrameMessage } from '@/lib/types'
 import { actions, deviceById, getState, normalizeUrl, tools } from './store'
 import { HASH_KEY, withPayload } from '@/lib/payload'
+import { insetsFor } from '@/lib/safearea'
 
 /** Oturuma özel güvenlik jetonu — sahte mesajları eler. */
 export const TOKEN = crypto.randomUUID()
@@ -65,6 +66,9 @@ window.addEventListener('message', (e: MessageEvent) => {
         || st.media.contrast !== 'auto' || st.media.forcedColors !== 'auto') {
         sendTo(m.fid, { t: 'media', overrides: st.media, touch })
       }
+      /* Güvenli alan ayarı yükten sonra değişmiş olabilir (yeniden yükleme
+         window.name'deki eski yükle açılır) — güncelini bildir */
+      if (frame) sendTo(m.fid, { t: 'safeArea', insets: insetsFor(dev?.safeArea, frame.landscape, st.chromeOpts.safeArea) })
       /* Canlı kod enjeksiyonu yeniden yüklemede kaybolur — tekrar uygula */
       if (st.settings.injectCss) sendTo(m.fid, { t: 'css', code: st.settings.injectCss })
       if (st.settings.injectJs) sendTo(m.fid, { t: 'js', code: st.settings.injectJs })
@@ -74,6 +78,7 @@ window.addEventListener('message', (e: MessageEvent) => {
     case 'metrics':
       actions.setFrameInfo(m.fid, {
         scrollHeight: m.scrollHeight, scrollWidth: m.scrollWidth, overflow: m.overflow,
+        cover: !!m.cover, tema: m.tema,
       })
       break
 
@@ -157,6 +162,8 @@ window.addEventListener('message', (e: MessageEvent) => {
       if (!url || !el || at < 0) break
       try {
         const payload = JSON.parse(decodeURIComponent(cur.slice(at + HASH_KEY.length + 2))) as FramePayload
+        /* Eski sitenin çerez anlık görüntüsü yeni adrese taşınmasın */
+        delete payload.ck
         el.src = withPayload(url, payload)
       } catch { /* bozuk yük — yoksay */ }
       break

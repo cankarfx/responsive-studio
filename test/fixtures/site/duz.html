@@ -1,0 +1,13 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sıradan site</title>
+<style>
+  body { margin: 0; font: 15px system-ui; background: #ffe9d6 }
+  header { position: fixed; top: 0; left: 0; right: 0; height: 40px; background: #ffe9d6;
+           padding-top: env(safe-area-inset-top, 0px) }
+</style></head><body>
+<header id="ust">Menü</header>
+<main style="padding-top:40px">içerik</main>
+<script>window.olc = () => ({ ust: parseFloat(getComputedStyle(document.getElementById('ust')).paddingTop), h: innerHeight,
+  bas: document.getElementById('ust').getBoundingClientRect().top })</script>
+</body></html>

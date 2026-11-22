@@ -127,6 +127,7 @@ Tüm özelliklerin kısa açıklamalı tek tablosu: **[OZELLIKLER.md](./OZELLIKL
   yenile, gizle…) etkilenmez
 - **Çevirme** — ekran başına veya toplu dikey/yatay
 - **Cihaz çerçevesi**, Dynamic Island / çentik / ana ekran çubuğu göstergesi
+- **Durum çubuğu** (saat, sinyal, pil): site gerçek telefondaki gibi çubuğun altından başlar; `viewport-fit=cover` sitelerde içerik altına uzanır ve `env(safe-area-inset-*)` gerçek değerini alır
 - **Yatay taşma uyarısı** — sayfa x ekseninde taşıyorsa başlıkta işaretlenir
 - **Tarayıcı profilleri** — Chrome, Edge, Firefox, Safari, Opera, Samsung Internet, WebView
   (UA + Client Hints değişir; motor her zaman Chrome'dur)
@@ -229,8 +230,8 @@ dahildir.
 
 **Depolama ve çerezler** — localStorage ve sessionStorage içeriğini boyutlarıyla gösterir;
 tek anahtarı veya tümünü silebilirsiniz (tüm ekranlara birden uygulanır). Çerez görüntüleyici
-ayrı bir izin ister ve o izin **yalnızca siz bu panelde onaylarsanız** alınır — çerezleri
-silip anonim kullanıcı deneyimini test etmek için kullanışlıdır.
+sitenin çerezlerini listeler ve siler — anonim kullanıcı deneyimini test etmek için
+kullanışlıdır.
 
 **Özel HTTP başlıkları** — İsteklere `Authorization`, feature flag ya da API anahtarı gibi
 başlıklar ekler. Basic auth yardımcısı kullanıcı adı/paroladan başlığı üretir. Bu başlıklar
@@ -258,6 +259,20 @@ Chrome, top-level sayfa `chrome-extension://` ise alt çerçevelerde 3rd-party �
 engellemez; ayrıca eklentinin **host izni** varsa gömülü site kendi top-level storage
 partition'ına erişir ve istekler same-site sayılır. Bu yüzden stüdyoda açtığınız site,
 normal sekmedeki gibi **giriş yapmış** gelir.
+
+Bir istisna ölçüldü: Chrome bu çerçevelerde `SameSite=Lax`/`Strict` çerezleri (SameSite
+belirtilmemiş olanlar da Lax sayılır, yani çoğu çerez) **ağ isteklerine ekliyor ama sayfanın
+JavaScript'inden gizliyor** — `document.cookie` yalnızca `SameSite=None` çerezleri gösteriyor.
+"Oturum var mı?" sorusunu bir çerezle cevaplayan siteler bu yüzden stüdyoda çıkış yapmış
+görünüyordu. **Çerez köprüsü** bunu tamamlar: gizlenen çerezler sayfanın ilk satırından
+itibaren `document.cookie`'de görünür, sayfanın yazdığı çerezler gerçek çerez deposuna
+yazılır. **HttpOnly çerezler hiçbir zaman sayfaya verilmez ve sayfa onları ezemez**; sayfa
+yalnızca kendi alan adına çerez yazabilir (normal tarayıcı kuralları).
+
+> **"Google / Apple / Microsoft ile giriş"** düğmeleri stüdyonun içinde çalışmaz: bu
+> sağlayıcılar kendi giriş sayfalarının başka bir sayfanın içinde açılmasını güvenlik
+> nedeniyle reddeder. Siteye normal bir sekmede bir kez giriş yapın, sonra stüdyoyu
+> yenileyin — ekranlar giriş yapılmış gelir.
 
 ### Gerçek CSS medya emülasyonu
 `prefers-color-scheme` gibi özelliklerin değerini iframe içinde değiştirmek mümkün değil
@@ -321,7 +336,7 @@ stüdyonun kendi *Konsol* panelinde görürsünüz.
 | CSS `@media (pointer: coarse)` / `(hover: none)` | ✅ Parmak modu ile gerçek (stylesheet yeniden yazımı) |
 | `:hover` stilleri mobilde | ✅ Parmak modunda hiç uygulanmaz — gerçek telefondaki gibi |
 | Frame başına gerçek HTTP `User-Agent` başlığı | ⛔ Alt çerçevede desteklenmiyor; sekme geneli tek UA mümkün |
-| `env(safe-area-inset-*)` | ⛔ Değiştirilemiyor; çentik yalnızca görsel olarak çizilir |
+| `env(safe-area-inset-*)` | ✅ `viewport-fit=cover` sitelerde cihazın gerçek değeri (stylesheet yeniden yazımı; harici, geç eklenen ve satır içi CSS dahil). Sıradan siteler durum çubuğunun altından başlar |
 | Gerçek Safari/Firefox motoru | ⛔ Hiçbir Chrome eklentisi yapamaz — yalnızca UA değişir |
 | Ekran görüntüsü çözünürlüğü | ✅ 1:1 (retina ekranda 2×) — yakalama öncesi ölçek düzeltilir |
 | Tam sayfa görüntü hızı | ⚠️ Chrome saniyede ~2 yakalama ile sınırlı; uzun sayfalar birkaç saniye sürer |
@@ -331,6 +346,8 @@ stüdyonun kendi *Konsol* panelinde görürsünüz.
 | Özel HTTP başlıkları | ✅ Yalnızca stüdyo sekmesinde ve sitenin kendi alan adında |
 | Çerçeve kaçışı koruması | ✅ `sandbox` ile — Chrome'da beklenen bir uyarı üretir (yukarı bakın) |
 | Aynı anda çok ekran → `429` | ✅ Kademeli yükleme (varsayılan 150 ms) ile önlenir |
+| Giriş yapılmış siteler | ✅ Çerez köprüsüyle — sayfanın JS'i kendi çerezlerini görür (HttpOnly hariç) |
+| "Google / Apple / Microsoft ile giriş" | ⛔ Sağlayıcılar çerçeve içinde çalışmayı reddeder — normal sekmede giriş yapıp stüdyoyu yenileyin |
 | Bot korumalı siteler | ⚠️ Kısa sürede çok sayıda yükleme yapılırsa bazı siteler IP'nizi geçici olarak engelleyebilir (eklentiden değil, sitenin korumasından). Ayarlar'dan yükleme aralığını artırın ya da daha az ekran açın |
 
 Ölçüm ayrıntıları ve hangi CDP komutunun neden çalışmadığı için
@@ -349,7 +366,10 @@ stüdyonun kendi *Konsol* panelinde görürsünüz.
   betikler yalnızca gerçekten stüdyonun içindeki ekranlarda başlar. Eklentinin kendi adına
   yaptığı istekler (dış CSS indirme, bağlantı denetimi) çerezlerinizi göndermez ve
   yerel ağınıza erişemez.
-- **Çerez izni isteğe bağlıdır** ve yalnızca çerez panelinde siz onaylarsanız istenir.
+- **Çerez izni** iki iş için kullanılır: stüdyo ekranlarında giriş yapılmış sitelerin
+  oturumunu göstermek (çerez köprüsü) ve çerez paneli. Bir ekran yalnızca **kendi adresine
+  ait, HttpOnly olmayan** çerezleri görebilir — yani normal bir sekmede de görebileceklerini.
+  Bu izin kurulumda ek bir uyarı göstermez (site erişimi izni zaten bunu kapsar).
 - Güvenlik davranışı gerçek Chrome'da saldırı senaryolarıyla test edilir
   (`test/guvenlik.mjs`).
 
@@ -368,7 +388,7 @@ Bir güvenlik sorunu fark ederseniz lütfen herkese açık bir issue yerine GitH
 ```bash
 npm run dev        # izleme modu
 npm run typecheck  # tip kontrolü
-npm test           # gerçek Chrome'da 18 test paketi (macOS'ta Chrome gerekir)
+npm test           # gerçek Chrome'da 20 test paketi (macOS'ta Chrome gerekir)
 ```
 
 Eklentiyi değiştirecekseniz **[GELISTIRICI-REHBERI.md](./GELISTIRICI-REHBERI.md)** ile başlayın:

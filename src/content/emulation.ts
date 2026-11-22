@@ -13,14 +13,21 @@
 import type { FramePayload, MediaOverrides } from '@/lib/types'
 import { DEFAULT_MEDIA } from '@/lib/types'
 import { PREFIX, insideViewer, readPayload, stripPayload } from '@/lib/payload'
+import { installCookieShim } from './cookies'
 
 const cfg = readPayload()
 if (cfg && insideViewer()) {
+  /* Çerez anlık görüntüsü yalnızca alındığı kökende geçerli; başka siteye
+     (ör. sunucu yönlendirmesiyle) geçildiyse kullanılmaz ve hiçbir yere yazılmaz. */
+  const ck = cfg.ck?.o === location.origin && Array.isArray(cfg.ck.l) ? cfg.ck.l : null
+  delete cfg.ck
   /* Köprü script'i (ISOLATED world) de okuyabilsin diye window.name'e yaz —
      iki script'in çalışma sırası garanti değil, bu yüzden iki kanal da dolu tutulur. */
   try { window.name = PREFIX + JSON.stringify(cfg) } catch { /* yoksay */ }
   applyEmulation(cfg)
   listenMediaOverrides(cfg.token)
+  /* Chrome'un bu çerçevede gizlediği SameSite=Lax/Strict çerezleri (bkz. cookies.ts) */
+  installCookieShim(cfg.token, ck)
   /* Konsol yakalama ve canlı JS, sayfanın KENDİ bağlamına enjekte edilir
      (bkz. installPageBridge). Enjeksiyon engellenirse eklenti içi yedeğe düşer. */
   if (!installPageBridge(cfg.token, cfg.fid)) {

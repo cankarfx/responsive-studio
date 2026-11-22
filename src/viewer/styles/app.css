@@ -856,3 +856,25 @@ input[type='range'] { accent-color: var(--accent); height: 20px; }
 
 /* İki adımlı onay bekleyen düğme */
 .armed { color: var(--err) !important; border-color: var(--err) !important; width: auto !important; padding-inline: 8px !important; }
+
+/* ─── Durum çubuğu (saat, sinyal, pil) ─────────────────────────────── */
+.statusbar {
+  position: absolute; top: 0; left: 0; z-index: 2;
+  pointer-events: none; overflow: hidden;
+  transition: background-color .25s;
+}
+.sb-ic {
+  transform-origin: top left; display: flex; align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.sb-ic .sb-sol, .sb-ic .sb-sag { flex: 1; display: flex; align-items: center; justify-content: center; }
+.sb-ic .sb-orta { flex: none; }
+.sb-ic .sb-sag { gap: 5px; }
+.sb-ic.ios .sb-sol { font-size: 17px; font-weight: 600; letter-spacing: -.2px; padding-left: 6px; }
+.sb-ic.ios .sb-sag { padding-right: 6px; }
+.sb-ic.ipad, .sb-ic.and { padding: 0 16px; }
+.sb-ic.ipad .sb-sol, .sb-ic.and .sb-sol { justify-content: flex-start; font-size: 13px; font-weight: 600; }
+.sb-ic.and .sb-sol { font-weight: 500; font-family: Roboto, "Segoe UI", sans-serif; }
+.sb-ic.ipad .sb-sag, .sb-ic.and .sb-sag { justify-content: flex-end; gap: 4px; }
+.sb-ic.ipad svg, .sb-ic.and svg { transform: scale(.82); }

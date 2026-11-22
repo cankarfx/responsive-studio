@@ -44,7 +44,13 @@ storage partition ayrışır → site "çıkış yapmış" görünür.
 - *"Requests from an extension to third-party origins are treated as same-site when the extension
   has host permissions... `SameSite=Strict` cookies can be sent."*
 
-→ `host_permissions: ["<all_urls>"]` ile **giriş yapılmış oturumlar korunur.** Bu, Responsive
+→ `host_permissions: ["<all_urls>"]` ile **giriş yapılmış oturumlar korunur.**
+
+**Ölçülen istisna (Chrome 157, Kasım 2026):** çerçevenin *ağ istekleri* Lax/Strict çerezleri
+taşıyor, ama sayfanın **`document.cookie`'si yalnızca `SameSite=None` çerezleri gösteriyor ve
+yazamıyor** (SameSite belirtilmemiş = Lax). Oturumu bir JS çereziyle anlayan siteler (ör.
+"oturum ipucu" çerezi + HttpOnly yenileme jetonu) stüdyoda çıkış yapmış görünüyordu.
+Çözüm: `content/cookies.ts` çerez köprüsü + `cookies` izni (bkz. GELISTIRICI-REHBERI §8.1). Bu, Responsive
 Viewer gibi rakiplerin çözemediği bir problem. Mimarinin görüntüleyiciyi ayrı bir
 `chrome-extension://` sekmesinde açması bu yüzden zorunlu.
 
@@ -370,7 +376,7 @@ sonuç verir — responsive testin %95'i budur.
 | 5 | Frame başına + genel yakınlaştırma, "ekrana sığdır" otomatik ölçek |
 | 6 | Yerleşim modları: ızgara / yatay şerit / dikey sütun / serbest tuval / odak |
 | 7 | Kenardan sürükleyerek serbest boyutlandırma + canlı px göstergesi |
-| 8 | Cihaz çerçevesi (bezel) aç/kapa, çentik + `env(safe-area-inset-*)` simülasyonu |
+| 8 | Cihaz çerçevesi (bezel) aç/kapa, çentik + `env(safe-area-inset-*)` simülasyonu (v1.0.3: durum çubuğu; `env()` stylesheet yeniden yazımıyla, yalnızca `viewport-fit=cover`) |
 | 9 | Frame göster/gizle, sürükle-bırak sıralama |
 | 10 | Cihaz setleri: Mobil / Tablet / Masaüstü / Bootstrap / Tailwind / özel setler |
 | 11 | Senkron kaydırma (oransal veya mutlak) |
@@ -444,7 +450,7 @@ sonuç verir — responsive testin %95'i budur.
 | 55 | Pro Mod (CDP) | ⛔ **İptal** — Chrome `debugger` iznini isteğe bağlı vermiyor (§2.4.1) |
 | 52–54 | Ağ/CPU kısıtlama, coğrafi konum | ⛔ CDP'siz mümkün değil |
 | 56 | Özel HTTP header'ları (auth, basic auth, feature flag) | ✅ **yapıldı** — yalnızca stüdyo sekmesinde geçerli |
-| 57 | Çerez görüntüleyici ve temizleyici | ✅ **yapıldı** — `cookies` izni yalnızca panelden istenir |
+| 57 | Çerez görüntüleyici ve temizleyici | ✅ **yapıldı** — `cookies` izni v1.0.3'ten beri kurulumla gelir (çerez köprüsü için; kurulumda ek uyarı yok) |
 | 58 | localStorage / sessionStorage görüntüleyici ve temizleyici | ✅ **yapıldı** |
 | 67 | Etkileşim kaydı → WebM | ✅ **yapıldı** — `getDisplayMedia` + `MediaRecorder`, ek izin gerekmez. GIF yok: aynı süre için WebM hem çok daha küçük hem daha kaliteli |
 | 31 | Tam sayfa ekran görüntüsü | ✅ Faz 2'de yapıldı |
@@ -498,7 +504,7 @@ verilir. Oturum korunması buna bağlı.
 
 - **Manifest V3**, Vite + TypeScript + **Preact** (~4KB, React API'si)
 - İzinler: `storage`, `scripting`, `contextMenus`,
-  `declarativeNetRequestWithHostAccess`; opsiyonel: `cookies`. **`debugger` yok** (§2.4.1)
+  `declarativeNetRequestWithHostAccess`, `cookies` (v1.0.3: çerez köprüsü, §2.2). **`debugger` yok** (§2.4.1)
   - Dağıtım öncesi temizlik (8 Kasım 2026): kullanılmayan `webNavigation` ve
     `unlimitedStorage` kaldırıldı; `tabs` yerine stüdyo sekmeleri izinsiz
     `runtime.getContexts` ile izleniyor.
